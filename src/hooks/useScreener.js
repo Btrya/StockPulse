@@ -26,9 +26,9 @@ function writeURL(params) {
 }
 
 async function scanSector(sector, params) {
-  // 先查缓存
+  // 先查缓存（判断 meta.cached 而非 data.length，过滤后为空也算命中）
   const cached = await fetchResults({ sector, ...params });
-  if (cached.data && cached.data.length > 0) {
+  if (cached.meta?.cached) {
     return cached;
   }
   // 无缓存则实时扫描
@@ -88,9 +88,20 @@ export default function useScreener() {
     setLoading(false);
   }, []);
 
+  // URL 同步
   useEffect(() => {
     writeURL(params);
   }, [params]);
+
+  // 页面加载时，如果 URL 带板块参数则自动查询
+  const initRef = { current: false };
+  useEffect(() => {
+    if (!initRef.current) {
+      initRef.current = true;
+      const initial = readURL();
+      if (initial.sectors.length) query(initial);
+    }
+  }, [query]);
 
   const scan = useCallback(() => {
     if (params.sectors.length) query(params);
