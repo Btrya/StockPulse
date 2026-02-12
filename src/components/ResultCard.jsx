@@ -13,6 +13,7 @@ export default function ResultCard({ item }) {
         <div>
           <span className="font-medium">{item.name}</span>
           <span className="text-xs text-slate-500 ml-2 num">{item.code}</span>
+          {item.industry && <span className="text-xs text-slate-600 ml-2">{item.industry}</span>}
         </div>
         <Tag color={colorJ(item.j)} className="num m-0">J {item.j}</Tag>
       </div>

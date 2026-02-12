@@ -7,12 +7,13 @@ async function request(path, opts = {}) {
   return data;
 }
 
-export function fetchSectors() {
-  return request('/sectors');
-}
-
 export function fetchResults(params) {
-  const qs = new URLSearchParams(params).toString();
+  const qs = new URLSearchParams();
+  if (params.klt) qs.set('klt', params.klt);
+  if (params.j != null) qs.set('j', String(params.j));
+  if (params.tolerance != null) qs.set('tolerance', String(params.tolerance));
+  if (params.industries?.length) qs.set('industries', params.industries.join(','));
+  if (params.excludeBoards?.length) qs.set('excludeBoards', params.excludeBoards.join(','));
   return request(`/results?${qs}`);
 }
 

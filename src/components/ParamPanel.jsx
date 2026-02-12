@@ -1,46 +1,50 @@
-import { Select, InputNumber, Radio, Button, Space, Card } from 'antd';
-import { SearchOutlined, ReloadOutlined, CheckSquareOutlined } from '@ant-design/icons';
+import { Select, InputNumber, Radio, Button, Space, Card, Checkbox } from 'antd';
+import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 
 const KLT_OPTIONS = [
-  { label: '日线', value: '101' },
-  { label: '周线', value: '102' },
+  { label: '日线', value: 'daily' },
+  { label: '周线', value: 'weekly' },
 ];
 
-export default function ParamPanel({ params, setParams, sectors, sectorsLoading, onSearch, loading }) {
+const BOARD_OPTIONS = [
+  { label: '创业板', value: 'gem' },
+  { label: '科创板', value: 'star' },
+  { label: '北交所', value: 'bse' },
+];
+
+export default function ParamPanel({ params, setParams, industries, onSearch, loading }) {
   const update = (key, val) => setParams(prev => ({ ...prev, [key]: val }));
 
-  const sectorOptions = sectors.map(s => ({ label: s.name, value: s.code }));
-
-  const selectAll = () => {
-    update('sectors', sectors.map(s => s.code));
-  };
-
-  const hasSectors = params.sectors.length > 0;
+  const industryOptions = (industries || []).map(i => ({ label: i, value: i }));
 
   return (
     <Card size="small" className="mb-4" styles={{ body: { padding: '16px' } }}>
       <div className="flex flex-col gap-4">
-        {/* 第一行：板块选择 */}
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">行业板块</span>
-            <Button size="small" type="link" icon={<CheckSquareOutlined />} onClick={selectAll} className="p-0 h-auto text-xs">
-              全选
-            </Button>
+        {/* 第一行：行业 + 排除板块 */}
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col gap-1 flex-1">
+            <span className="text-xs text-slate-400">行业筛选（留空=全部）</span>
+            <Select
+              mode="multiple"
+              showSearch
+              placeholder="选择行业（支持搜索）"
+              optionFilterProp="label"
+              options={industryOptions}
+              value={params.industries}
+              onChange={v => update('industries', v)}
+              maxTagCount="responsive"
+              style={{ width: '100%' }}
+              allowClear
+            />
           </div>
-          <Select
-            mode="multiple"
-            showSearch
-            placeholder="选择行业板块（支持搜索、多选）"
-            optionFilterProp="label"
-            options={sectorOptions}
-            value={params.sectors}
-            onChange={v => update('sectors', v)}
-            loading={sectorsLoading}
-            maxTagCount="responsive"
-            style={{ width: '100%' }}
-            allowClear
-          />
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-slate-400">排除板块</span>
+            <Checkbox.Group
+              options={BOARD_OPTIONS}
+              value={params.excludeBoards}
+              onChange={v => update('excludeBoards', v)}
+            />
+          </div>
         </div>
 
         {/* 第二行：参数 + 按钮 */}
@@ -85,13 +89,12 @@ export default function ParamPanel({ params, setParams, sectors, sectorsLoading,
               icon={<SearchOutlined />}
               onClick={onSearch}
               loading={loading}
-              disabled={!hasSectors}
             >
-              筛选{hasSectors ? ` (${params.sectors.length})` : ''}
+              筛选
             </Button>
             <Button
               icon={<ReloadOutlined />}
-              onClick={() => setParams({ sectors: [], j: 0, tolerance: 2, klt: '101' })}
+              onClick={() => setParams({ klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [] })}
             >
               重置
             </Button>

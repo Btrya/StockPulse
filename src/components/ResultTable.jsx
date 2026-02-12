@@ -1,11 +1,5 @@
 import { Table, Tag } from 'antd';
 
-function colorJ(j) {
-  if (j < -10) return '#4ade80';
-  if (j < 0) return '#86efac';
-  return '#fde047';
-}
-
 function colorDev(d) {
   if (d > 0) return '#f87171';
   if (d < 0) return '#4ade80';
@@ -16,28 +10,35 @@ const columns = [
   {
     title: '代码',
     dataIndex: 'code',
-    width: 90,
+    width: 80,
     fixed: 'left',
     render: v => <span className="num">{v}</span>,
   },
   {
     title: '名称',
     dataIndex: 'name',
-    width: 100,
+    width: 90,
     fixed: 'left',
   },
   {
-    title: '收盘价',
+    title: '行业',
+    dataIndex: 'industry',
+    width: 80,
+    filters: [],
+    onFilter: (value, record) => record.industry === value,
+  },
+  {
+    title: '收盘',
     dataIndex: 'close',
-    width: 90,
+    width: 80,
     align: 'right',
     sorter: (a, b) => a.close - b.close,
     render: v => <span className="num">{v}</span>,
   },
   {
-    title: '最低价',
+    title: '最低',
     dataIndex: 'low',
-    width: 90,
+    width: 80,
     align: 'right',
     sorter: (a, b) => a.low - b.low,
     render: v => <span className="num">{v}</span>,
@@ -45,14 +46,14 @@ const columns = [
   {
     title: '短期趋势',
     dataIndex: 'shortTrend',
-    width: 100,
+    width: 90,
     align: 'right',
     render: v => <span className="num">{v}</span>,
   },
   {
     title: '短期偏离',
     dataIndex: 'deviationShort',
-    width: 100,
+    width: 90,
     align: 'right',
     sorter: (a, b) => a.deviationShort - b.deviationShort,
     render: v => (
@@ -64,14 +65,14 @@ const columns = [
   {
     title: '多空线',
     dataIndex: 'bullBear',
-    width: 100,
+    width: 90,
     align: 'right',
     render: v => <span className="num">{v}</span>,
   },
   {
     title: '多空偏离',
     dataIndex: 'deviationBull',
-    width: 100,
+    width: 90,
     align: 'right',
     sorter: (a, b) => a.deviationBull - b.deviationBull,
     render: v => (
@@ -96,13 +97,21 @@ const columns = [
 ];
 
 export default function ResultTable({ data }) {
+  // 动态生成行业 filter
+  const industries = [...new Set(data.map(r => r.industry).filter(Boolean))];
+  const cols = columns.map(c =>
+    c.dataIndex === 'industry'
+      ? { ...c, filters: industries.map(i => ({ text: i, value: i })) }
+      : c
+  );
+
   return (
     <Table
-      columns={columns}
+      columns={cols}
       dataSource={data}
       rowKey="code"
       size="small"
-      pagination={{ pageSize: 50, showSizeChanger: false, showTotal: t => `共 ${t} 条` }}
+      pagination={{ pageSize: 50, showSizeChanger: true, showTotal: t => `共 ${t} 条` }}
       scroll={{ x: 900 }}
     />
   );

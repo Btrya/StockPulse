@@ -1,32 +1,42 @@
-// 宽阈值：Cron 和缓存用，后续按用户参数收窄
+// 宽阈值：存 Redis 用，查询时按用户参数收窄
 export const WIDE_J_THRESHOLD = 20;
 export const WIDE_TOLERANCE = 5;
 
 // 默认用户参数
 export const DEFAULT_J = 0;
 export const DEFAULT_TOLERANCE = 2;
-export const DEFAULT_KLT = '101'; // 101=日线 102=周线
+export const DEFAULT_KLT = 'daily'; // daily | weekly
 
-// 东方财富 API 并发控制
-export const CONCURRENCY = 5;
-export const BATCH_DELAY_MS = 200;
-export const RETRY_COUNT = 2;
-export const RETRY_DELAY_MS = 500;
+// Tushare 并发控制（免费版限流较严）
+export const TUSHARE_DELAY_MS = 150;
 
-// K线数据量
-export const KLINE_LIMIT = 150;
-
-// Redis key 前缀
+// Redis key
 export const KEY = {
-  SECTORS: 'sectors:list',
-  scanResult: (date, sector, klt = '101') => `scan:${date}:${sector}:${klt}`,
+  STOCKS: 'stocks:list',
+  screenResult: (date, klt) => `screen:${date}:${klt}`,
   META: 'scan:meta',
   PROGRESS: 'scan:progress',
 };
 
 // TTL (seconds)
 export const TTL = {
-  SECTORS: 86400,       // 24h
-  SCAN_RESULT: 172800,  // 48h
-  PROGRESS: 7200,       // 2h
+  STOCKS: 86400,        // 24h
+  SCREEN_RESULT: 172800, // 48h
+  PROGRESS: 7200,        // 2h
 };
+
+// 市场板块分类
+export const MARKET_BOARDS = [
+  { code: 'main_sh', name: '沪市主板', prefix: ['60'] },
+  { code: 'main_sz', name: '深市主板', prefix: ['00'] },
+  { code: 'gem', name: '创业板', prefix: ['30'] },
+  { code: 'star', name: '科创板', prefix: ['68'] },
+  { code: 'bse', name: '北交所', prefix: ['83', '87', '43'] },
+];
+
+export function getMarketBoard(code) {
+  for (const b of MARKET_BOARDS) {
+    if (b.prefix.some(p => code.startsWith(p))) return b.code;
+  }
+  return 'other';
+}

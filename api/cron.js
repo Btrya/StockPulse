@@ -1,9 +1,9 @@
-import { getSectors, getSectorStocks, batchGetKlines } from './_lib/eastmoney.js';
+import { getStockList, batchGetKlines } from './_lib/tushare.js';
 import { screenStock } from './_lib/screener.js';
 import * as redis from './_lib/redis.js';
 import { KEY, TTL } from './_lib/constants.js';
 
-const TIMEOUT_MS = 50000; // 留 10s 余量
+const TIMEOUT_MS = 50000;
 
 export default async function handler(req, res) {
   // 验证 CRON_SECRET
@@ -14,64 +14,102 @@ export default async function handler(req, res) {
 
   const startTime = Date.now();
   const today = new Date().toISOString().slice(0, 10);
-  let processed = 0;
+  // 起始日期：往前推 200 天
+  const start = new Date(Date.now() - 200 * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
 
   try {
     if (!redis.isConfigured()) {
       return res.json({ message: 'Redis not configured, skipping' });
     }
 
-    // 获取板块列表
-    let sectors = await redis.get(KEY.SECTORS);
-    if (!sectors) {
-      sectors = await getSectors();
-      await redis.set(KEY.SECTORS, sectors, TTL.SECTORS);
-    }
-
-    // 读取进度
+    // 读取进度（支持断点续扫）
     let progress = await redis.get(KEY.PROGRESS);
-    if (!progress || !progress.queue || progress.queue.length === 0) {
-      // 初始化队列：过滤掉今天已扫描的板块
-      const queue = [];
-      for (const s of sectors) {
-        const existing = await redis.get(KEY.scanResult(today, s.code));
-        if (!existing) queue.push(s.code);
-      }
-      progress = { queue, current: null };
+
+    // 获取股票列表
+    let stocks;
+    if (progress && progress.date === today && progress.stocks) {
+      stocks = progress.stocks;
+    } else {
+      stocks = await getStockList();
+      // 过滤 ST 和 退市
+      stocks = stocks.filter(s => !s.name.includes('ST') && !s.name.includes('退'));
+      progress = { date: today, stocks, idx: 0, dailyHits: [], weeklyHits: [] };
+      await redis.set(KEY.PROGRESS, progress, TTL.PROGRESS);
     }
 
-    // 逐板块扫描，直到接近超时
-    while (progress.queue.length > 0) {
+    const klt = progress.currentKlt || 'daily';
+    let idx = progress.idx || 0;
+    const hits = klt === 'daily' ? (progress.dailyHits || []) : (progress.weeklyHits || []);
+    let processed = 0;
+
+    // 逐只股票扫描
+    while (idx < stocks.length) {
       if (Date.now() - startTime > TIMEOUT_MS) break;
 
-      const sectorCode = progress.queue.shift();
-      progress.current = sectorCode;
-      await redis.set(KEY.PROGRESS, progress, TTL.PROGRESS);
+      const stock = stocks[idx];
+      try {
+        const klines = klt === 'weekly'
+          ? await (await import('./_lib/tushare.js')).getWeekly(stock.ts_code, start)
+          : await (await import('./_lib/tushare.js')).getDaily(stock.ts_code, start);
 
-      const stocks = await getSectorStocks(sectorCode);
-      if (stocks.length === 0) {
-        processed++;
-        continue;
+        const result = screenStock({ ...stock, klines });
+        if (result) hits.push(result);
+      } catch {
+        // 单只失败跳过
       }
 
-      const withKlines = await batchGetKlines(stocks);
-      const hits = withKlines.map(screenStock).filter(Boolean);
-
-      await redis.set(KEY.scanResult(today, sectorCode), hits, TTL.SCAN_RESULT);
+      idx++;
       processed++;
+
+      // 每 50 只保存一次进度
+      if (processed % 50 === 0) {
+        if (klt === 'daily') progress.dailyHits = hits;
+        else progress.weeklyHits = hits;
+        progress.idx = idx;
+        progress.currentKlt = klt;
+        await redis.set(KEY.PROGRESS, progress, TTL.PROGRESS);
+      }
+
+      // Tushare 限流
+      await new Promise(r => setTimeout(r, 150));
     }
 
-    progress.current = null;
+    // 保存本轮进度
+    if (klt === 'daily') progress.dailyHits = hits;
+    else progress.weeklyHits = hits;
+    progress.idx = idx;
+    progress.currentKlt = klt;
+
+    // 如果当前 klt 扫描完成
+    if (idx >= stocks.length) {
+      await redis.set(KEY.screenResult(today, klt), hits, TTL.SCREEN_RESULT);
+
+      if (klt === 'daily') {
+        // 切到周线
+        progress.currentKlt = 'weekly';
+        progress.idx = 0;
+        progress.weeklyHits = [];
+      } else {
+        // 全部完成
+        progress.currentKlt = null;
+        progress.idx = 0;
+      }
+    }
+
     await redis.set(KEY.PROGRESS, progress, TTL.PROGRESS);
     await redis.set(KEY.META, { lastDate: today, lastTime: new Date().toISOString() });
 
     return res.json({
       processed,
-      remaining: progress.queue.length,
+      total: stocks.length,
+      idx,
+      klt,
+      hits: hits.length,
       elapsed: Date.now() - startTime,
+      done: idx >= stocks.length,
     });
   } catch (err) {
     console.error('cron error:', err);
-    return res.status(500).json({ error: err.message, processed });
+    return res.status(500).json({ error: err.message });
   }
 }

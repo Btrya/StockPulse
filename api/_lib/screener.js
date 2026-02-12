@@ -1,10 +1,9 @@
 import { shortTrendLine, bullBearLine, kdj } from './indicators.js';
-import { WIDE_J_THRESHOLD, WIDE_TOLERANCE } from './constants.js';
+import { WIDE_J_THRESHOLD, WIDE_TOLERANCE, getMarketBoard } from './constants.js';
 
-// 对单只股票计算指标，用宽阈值判断是否可能命中
-// 返回 null 表示不符合，否则返回指标数据
+// 对单只股票计算指标，宽阈值筛选
 export function screenStock(stock) {
-  const { klines, code, name, market } = stock;
+  const { klines, ts_code, symbol, name, industry } = stock;
   if (!klines || klines.length < 120) return null;
 
   const closes = klines.map(k => k.close);
@@ -18,25 +17,27 @@ export function screenStock(stock) {
   const { k, d, j } = kdj(highs, lows, closes);
   if (j === null) return null;
 
-  // 宽阈值：J < 20
   if (j >= WIDE_J_THRESHOLD) return null;
 
   const todayLow = lows[lows.length - 1];
   const todayClose = closes[closes.length - 1];
 
-  // 偏离百分比
   const deviationShort = ((todayLow - shortTrend) / shortTrend) * 100;
   const deviationBull = ((todayLow - bullBear) / bullBear) * 100;
 
-  // 宽阈值容差：任意一条线 ±5% 内
   const nearShort = Math.abs(deviationShort) <= WIDE_TOLERANCE;
   const nearBull = Math.abs(deviationBull) <= WIDE_TOLERANCE;
   if (!nearShort && !nearBull) return null;
 
+  const code = symbol || ts_code.split('.')[0];
+  const board = getMarketBoard(code);
+
   return {
     code,
+    ts_code,
     name,
-    market,
+    industry: industry || '',
+    board,
     low: round2(todayLow),
     close: round2(todayClose),
     shortTrend: round2(shortTrend),
@@ -50,9 +51,11 @@ export function screenStock(stock) {
 }
 
 // 按用户参数二次过滤
-export function filterResults(results, jThreshold, tolerance) {
+export function filterResults(results, { jThreshold, tolerance, industries, excludeBoards }) {
   return results.filter(r => {
     if (r.j >= jThreshold) return false;
+    if (excludeBoards && excludeBoards.length && excludeBoards.includes(r.board)) return false;
+    if (industries && industries.length && !industries.includes(r.industry)) return false;
     const nearShort = Math.abs(r.deviationShort) <= tolerance;
     const nearBull = Math.abs(r.deviationBull) <= tolerance;
     return nearShort || nearBull;

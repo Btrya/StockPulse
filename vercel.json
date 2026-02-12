@@ -2,7 +2,11 @@
   "regions": ["hkg1"],
   "crons": [
     { "path": "/api/cron", "schedule": "3 7 * * 1-5" },
-    { "path": "/api/cron", "schedule": "13 7 * * 1-5" }
+    { "path": "/api/cron", "schedule": "8 7 * * 1-5" },
+    { "path": "/api/cron", "schedule": "13 7 * * 1-5" },
+    { "path": "/api/cron", "schedule": "18 7 * * 1-5" },
+    { "path": "/api/cron", "schedule": "23 7 * * 1-5" },
+    { "path": "/api/cron", "schedule": "28 7 * * 1-5" }
   ],
   "functions": {
     "api/**/*.js": { "maxDuration": 60 }
