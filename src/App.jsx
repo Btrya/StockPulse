@@ -12,6 +12,7 @@ export default function App() {
     results,
     meta,
     loading,
+    progress,
     scan,
   } = useScreener();
 
@@ -25,7 +26,7 @@ export default function App() {
         onSearch={scan}
         loading={loading}
       />
-      <ResultList results={results} meta={meta} loading={loading} />
+      <ResultList results={results} meta={meta} loading={loading} progress={progress} />
     </Layout>
   );
 }

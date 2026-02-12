@@ -19,10 +19,19 @@ export default async function handler(req, res) {
 
     const stocks = await getSectorStocks(sector);
     if (!stocks.length) {
-      return res.json({ data: [], meta: { total: 0 } });
+      return res.json({
+        data: [],
+        meta: { total: 0, diag: { stockCount: 0, message: '板块无成分股' } },
+      });
     }
 
     const withKlines = await batchGetKlines(stocks, klt);
+
+    // 诊断统计
+    const klineNull = withKlines.filter(s => !s.klines).length;
+    const klineShort = withKlines.filter(s => s.klines && s.klines.length < 120).length;
+    const klineOk = withKlines.filter(s => s.klines && s.klines.length >= 120).length;
+
     const hits = withKlines.map(screenStock).filter(Boolean);
 
     const today = new Date().toISOString().slice(0, 10);
@@ -50,6 +59,12 @@ export default async function handler(req, res) {
         updatedAt: new Date().toISOString(),
         scanDate: today,
         klt,
+        diag: {
+          stockCount: stocks.length,
+          klineOk,
+          klineNull,
+          klineShort,
+        },
       },
     });
   } catch (err) {
