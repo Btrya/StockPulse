@@ -1,6 +1,30 @@
 import * as redis from './_lib/redis.js';
-import { KEY, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS } from './_lib/constants.js';
+import { KEY, TTL, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS } from './_lib/constants.js';
 import { filterResults } from './_lib/screener.js';
+
+// 获取行业列表（优先 Redis 缓存，fallback Tushare）
+async function getIndustries() {
+  const CACHE_KEY = 'industries:list';
+  if (redis.isConfigured()) {
+    try {
+      const cached = await redis.get(CACHE_KEY);
+      if (cached) return cached;
+    } catch {}
+  }
+
+  // 从 Tushare 拉股票列表提取行业
+  const { getStockList } = await import('./_lib/tushare.js');
+  const stocks = await getStockList();
+  const industries = [...new Set(stocks.map(s => s.industry).filter(Boolean))].sort(
+    (a, b) => a.localeCompare(b, 'zh-CN')
+  );
+
+  // 缓存 24h
+  if (redis.isConfigured()) {
+    try { await redis.set(CACHE_KEY, industries, TTL.STOCKS); } catch {}
+  }
+  return industries;
+}
 
 export default async function handler(req, res) {
   try {
@@ -14,29 +38,51 @@ export default async function handler(req, res) {
     // 排除板块（逗号分隔：gem,star,bse）
     const excludeBoards = req.query.excludeBoards ? req.query.excludeBoards.split(',').filter(Boolean) : [];
 
-    if (!redis.isConfigured()) {
-      return res.json({ data: [], meta: { total: 0, cached: false, message: 'Redis 未配置' } });
+    // 尝试从 Redis 读取扫描结果
+    let data = null;
+    let scanDate = null;
+
+    if (redis.isConfigured()) {
+      const today = new Date().toISOString().slice(0, 10);
+      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+      try {
+        data = await redis.get(KEY.screenResult(today, klt));
+        scanDate = today;
+        if (!data) {
+          data = await redis.get(KEY.screenResult(yesterday, klt));
+          scanDate = yesterday;
+        }
+      } catch (redisErr) {
+        console.error('Redis read failed:', redisErr.message);
+      }
     }
 
-    // 尝试今天和昨天的数据
-    const today = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-
-    let data = null;
-    let scanDate = today;
-    try {
-      data = await redis.get(KEY.screenResult(today, klt));
-      if (!data) {
-        data = await redis.get(KEY.screenResult(yesterday, klt));
-        scanDate = yesterday;
+    // 无论有没有扫描结果，都拿行业列表
+    let allIndustries;
+    if (data && data.length) {
+      allIndustries = [...new Set(data.map(r => r.industry).filter(Boolean))].sort(
+        (a, b) => a.localeCompare(b, 'zh-CN')
+      );
+    } else {
+      try {
+        allIndustries = await getIndustries();
+      } catch (err) {
+        console.error('Failed to get industries:', err.message);
+        allIndustries = [];
       }
-    } catch (redisErr) {
-      console.error('Redis read failed:', redisErr.message);
-      return res.json({ data: [], meta: { total: 0, cached: false } });
     }
 
     if (!data) {
-      return res.json({ data: [], meta: { total: 0, cached: false, message: '暂无数据，请等待定时任务执行或手动触发扫描' } });
+      return res.json({
+        data: [],
+        meta: {
+          total: 0,
+          cached: false,
+          message: '暂无扫描数据，请等待定时任务执行或手动触发扫描',
+          industries: allIndustries,
+          boards: MARKET_BOARDS.map(b => ({ code: b.code, name: b.name })),
+        },
+      });
     }
 
     const filtered = filterResults(data, { jThreshold: j, tolerance, industries, excludeBoards });
@@ -46,11 +92,6 @@ export default async function handler(req, res) {
       const vb = b[sort] ?? 0;
       return order === 'asc' ? va - vb : vb - va;
     });
-
-    // 提取行业列表供前端筛选用
-    const allIndustries = [...new Set(data.map(r => r.industry).filter(Boolean))].sort(
-      (a, b) => a.localeCompare(b, 'zh-CN')
-    );
 
     return res.json({
       data: filtered,
