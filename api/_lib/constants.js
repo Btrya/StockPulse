@@ -8,8 +8,10 @@ export const DEFAULT_TOLERANCE = 2;
 export const DEFAULT_KLT = '101'; // 101=日线 102=周线
 
 // 东方财富 API 并发控制
-export const CONCURRENCY = 10;
-export const BATCH_DELAY_MS = 100;
+export const CONCURRENCY = 5;
+export const BATCH_DELAY_MS = 200;
+export const RETRY_COUNT = 2;
+export const RETRY_DELAY_MS = 500;
 
 // K线数据量
 export const KLINE_LIMIT = 150;

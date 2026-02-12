@@ -1,4 +1,4 @@
-import { CONCURRENCY, BATCH_DELAY_MS, KLINE_LIMIT } from './constants.js';
+import { CONCURRENCY, BATCH_DELAY_MS, KLINE_LIMIT, RETRY_COUNT, RETRY_DELAY_MS } from './constants.js';
 
 const HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -9,9 +9,23 @@ const BASE = 'https://push2.eastmoney.com/api/qt/clist/get';
 const KLINE_BASE = 'https://push2his.eastmoney.com/api/qt/stock/kline/get';
 
 async function fetchJSON(url) {
-  const res = await fetch(url, { headers: HEADERS });
+  const res = await fetch(url, {
+    headers: HEADERS,
+    signal: AbortSignal.timeout(8000),
+  });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
+}
+
+async function fetchWithRetry(url, retries = RETRY_COUNT) {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await fetchJSON(url);
+    } catch (err) {
+      if (i === retries) throw err;
+      await new Promise(r => setTimeout(r, RETRY_DELAY_MS * (i + 1)));
+    }
+  }
 }
 
 // 行业板块列表
@@ -23,7 +37,7 @@ export async function getSectors() {
     fs: 'm:90+t:2+f:!50',
     fields: 'f12,f14',
   });
-  const data = await fetchJSON(`${BASE}?${params}`);
+  const data = await fetchWithRetry(`${BASE}?${params}`);
   if (!data?.data?.diff) return [];
   return data.data.diff.map(d => ({ code: d.f12, name: d.f14 }));
 }
@@ -37,7 +51,7 @@ export async function getSectorStocks(sectorCode) {
     fs: `b:${sectorCode}+f:!50`,
     fields: 'f12,f13,f14',
   });
-  const data = await fetchJSON(`${BASE}?${params}`);
+  const data = await fetchWithRetry(`${BASE}?${params}`);
   if (!data?.data?.diff) return [];
   return data.data.diff.map(d => ({
     code: d.f12,
@@ -57,7 +71,7 @@ export async function getKline(market, code, klt = '101') {
     beg: '0', end: '20500101',
     lmt: String(KLINE_LIMIT),
   });
-  const data = await fetchJSON(`${KLINE_BASE}?${params}`);
+  const data = await fetchWithRetry(`${KLINE_BASE}?${params}`);
   if (!data?.data?.klines) return null;
   return data.data.klines.map(line => {
     const [date, open, close, high, low, vol] = line.split(',');

@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { fetchResults, triggerScan } from '../lib/api';
 
 const DEFAULTS = { sectors: [], j: 0, tolerance: 2, klt: '101' };
-const SCAN_CONCURRENCY = 3;
 
 function readURL() {
   const sp = new URLSearchParams(window.location.search);
@@ -61,26 +60,21 @@ export default function useScreener() {
     const allDiag = [];
     let lastMeta = null;
 
-    // 分批扫描，每批 SCAN_CONCURRENCY 个板块
-    for (let i = 0; i < sectorList.length; i += SCAN_CONCURRENCY) {
-      const batch = sectorList.slice(i, i + SCAN_CONCURRENCY);
-      const promises = batch.map(sector =>
-        scanSector(sector, { j: p.j, tolerance: p.tolerance, klt: p.klt })
-          .then(res => ({ sector, ...res }))
-          .catch(err => ({ sector, data: [], meta: { error: err.message } }))
-      );
-      const batchResults = await Promise.all(promises);
-
-      for (const r of batchResults) {
+    // 逐板块串行扫描，避免并发请求叠加被东方财富限流
+    for (let i = 0; i < sectorList.length; i++) {
+      const sector = sectorList[i];
+      try {
+        const r = await scanSector(sector, { j: p.j, tolerance: p.tolerance, klt: p.klt });
         if (r.data) allResults.push(...r.data);
         if (r.meta) {
           lastMeta = r.meta;
-          if (r.meta.diag) allDiag.push({ sector: r.sector, ...r.meta.diag });
+          if (r.meta.diag) allDiag.push({ sector, ...r.meta.diag });
         }
+      } catch (err) {
+        allDiag.push({ sector, error: err.message });
       }
 
-      setProgress({ done: Math.min(i + SCAN_CONCURRENCY, sectorList.length), total: sectorList.length });
-      // 实时更新结果
+      setProgress({ done: i + 1, total: sectorList.length });
       setResults([...allResults]);
     }
 
