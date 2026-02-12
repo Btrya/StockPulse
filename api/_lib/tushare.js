@@ -72,7 +72,7 @@ export async function getThsConceptList() {
 
 // 获取某概念板块的成分股
 export async function getThsMembers(tsCode) {
-  const data = await tushareRequest('ths_member', { ts_code: tsCode }, 'code');
+  const data = await tushareRequest('ths_member', { ts_code: tsCode });
   return parseData(data);
 }
 

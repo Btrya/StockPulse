@@ -39,6 +39,7 @@ export default async function handler(req, res) {
     let idx = meta.idx || 0;
     const map = meta.map || {}; // { stock_ts_code: [concept_name, ...] }
     let processed = 0;
+    let sample = null; // 诊断用：记录第一条成分股原始数据
 
     while (idx < conceptList.length) {
       if (Date.now() - startTime > TIMEOUT_MS) break;
@@ -46,12 +47,17 @@ export default async function handler(req, res) {
       const concept = conceptList[idx];
       try {
         const members = await getThsMembers(concept.ts_code);
+        if (!sample && members.length) {
+          sample = { concept: concept.name, firstMember: members[0], keys: Object.keys(members[0]) };
+        }
         for (const m of members) {
-          // m.code 是纯数字代码，需要映射到 ts_code 格式
-          const code = m.code;
-          if (!code) continue;
-          // 构造 ts_code：6开头的是上海(.SH)，其余深圳(.SZ)
-          const tsCode = code.startsWith('6') ? `${code}.SH` : `${code}.SZ`;
+          // 优先用 code 字段，fallback 到 con_code / ts_code
+          const raw = m.code || m.con_code || '';
+          if (!raw) continue;
+          // 兼容两种格式：已带后缀 "000001.SZ" 或纯数字 "000001"
+          const tsCode = raw.includes('.')
+            ? raw
+            : (raw.startsWith('6') ? `${raw}.SH` : `${raw}.SZ`);
           if (!map[tsCode]) map[tsCode] = [];
           if (!map[tsCode].includes(concept.name)) {
             map[tsCode].push(concept.name);
@@ -96,6 +102,7 @@ export default async function handler(req, res) {
       elapsed: Date.now() - startTime,
       done,
       needContinue: !done,
+      sample,
     });
   } catch (err) {
     console.error('concepts error:', err);
