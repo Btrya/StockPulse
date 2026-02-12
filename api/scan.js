@@ -9,12 +9,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { sector } = req.body || {};
+    const body = req.body || {};
+    const sector = body.sector;
     if (!sector) {
       return res.status(400).json({ error: 'sector is required' });
     }
 
-    const klt = req.body.klt || DEFAULT_KLT;
+    const klt = body.klt || DEFAULT_KLT;
 
     const stocks = await getSectorStocks(sector);
     if (!stocks.length) {
@@ -26,15 +27,19 @@ export default async function handler(req, res) {
 
     const today = new Date().toISOString().slice(0, 10);
 
-    // 缓存宽阈值结果
+    // 缓存宽阈值结果（失败不阻塞返回）
     if (redis.isConfigured()) {
-      await redis.set(KEY.scanResult(today, sector, klt), hits, TTL.SCAN_RESULT);
-      await redis.set(KEY.META, { lastDate: today, lastTime: new Date().toISOString() });
+      try {
+        await redis.set(KEY.scanResult(today, sector, klt), hits, TTL.SCAN_RESULT);
+        await redis.set(KEY.META, { lastDate: today, lastTime: new Date().toISOString() });
+      } catch (redisErr) {
+        console.error('Redis cache write failed:', redisErr.message);
+      }
     }
 
     // 按用户参数过滤返回
-    const j = Number(req.body.j ?? DEFAULT_J);
-    const tolerance = Number(req.body.tolerance ?? DEFAULT_TOLERANCE);
+    const j = Number(body.j ?? DEFAULT_J);
+    const tolerance = Number(body.tolerance ?? DEFAULT_TOLERANCE);
     const filtered = filterResults(hits, j, tolerance);
 
     return res.json({
@@ -49,6 +54,6 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error('scan error:', err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message, stack: err.stack });
   }
 }

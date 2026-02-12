@@ -25,7 +25,14 @@ export default async function handler(req, res) {
       return res.json({ data: [], meta: { total: 0, message: '请选择行业板块' } });
     }
 
-    const data = await redis.get(KEY.scanResult(today, sector, klt));
+    let data = null;
+    try {
+      data = await redis.get(KEY.scanResult(today, sector, klt));
+    } catch (redisErr) {
+      console.error('Redis read failed:', redisErr.message);
+      return res.json({ data: [], meta: { total: 0, cached: false } });
+    }
+
     if (!data) {
       return res.json({ data: [], meta: { total: 0, cached: false } });
     }
