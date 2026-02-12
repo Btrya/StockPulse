@@ -5,7 +5,14 @@ import { KEY, TTL, TUSHARE_DELAY_MS } from './_lib/constants.js';
 const TIMEOUT_MS = 55000;
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
+  // GET: Vercel cron 触发（需 CRON_SECRET）
+  // POST: 前端手动触发
+  if (req.method === 'GET') {
+    const auth = req.headers.authorization;
+    if (process.env.CRON_SECRET && auth !== `Bearer ${process.env.CRON_SECRET}`) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+  } else if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 

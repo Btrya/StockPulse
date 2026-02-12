@@ -1,5 +1,7 @@
-import { Select, InputNumber, Radio, Button, Space, Card, Checkbox } from 'antd';
-import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { useState } from 'react';
+import { Select, InputNumber, Radio, Button, Space, Card, Checkbox, message } from 'antd';
+import { SearchOutlined, ReloadOutlined, TagsOutlined } from '@ant-design/icons';
+import { buildConcepts } from '../lib/api';
 
 const KLT_OPTIONS = [
   { label: '日线', value: 'daily' },
@@ -14,6 +16,23 @@ const BOARD_OPTIONS = [
 
 export default function ParamPanel({ params, setParams, industries, concepts, onSearch, loading }) {
   const update = (key, val) => setParams(prev => ({ ...prev, [key]: val }));
+  const [buildingConcepts, setBuildingConcepts] = useState(false);
+
+  const handleBuildConcepts = async () => {
+    setBuildingConcepts(true);
+    try {
+      let result = await buildConcepts();
+      while (result.needContinue) {
+        message.info(`概念构建中... ${result.idx}/${result.total}`);
+        result = await buildConcepts();
+      }
+      message.success(`概念构建完成，覆盖 ${result.stocks} 只股票`);
+    } catch (err) {
+      message.error(`概念构建失败: ${err.message}`);
+    } finally {
+      setBuildingConcepts(false);
+    }
+  };
 
   const industryOptions = (industries || []).map(i => ({ label: i, value: i }));
   const conceptOptions = (concepts || []).map(c => ({ label: c, value: c }));
@@ -114,6 +133,15 @@ export default function ParamPanel({ params, setParams, industries, concepts, on
             >
               重置
             </Button>
+            {!conceptOptions.length && (
+              <Button
+                icon={<TagsOutlined />}
+                onClick={handleBuildConcepts}
+                loading={buildingConcepts}
+              >
+                构建概念
+              </Button>
+            )}
           </Space>
         </div>
       </div>
