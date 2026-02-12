@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply antialiased;
+  }
+}
+
+/* tabular-nums for numeric data */
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* antd table dark tweaks */
+.ant-table {
+  background: transparent !important;
+}
+.ant-table-thead > tr > th {
+  font-weight: 500 !important;
+}
