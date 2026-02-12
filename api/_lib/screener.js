@@ -51,11 +51,15 @@ export function screenStock(stock) {
 }
 
 // 按用户参数二次过滤
-export function filterResults(results, { jThreshold, tolerance, industries, excludeBoards }) {
+export function filterResults(results, { jThreshold, tolerance, industries, excludeBoards, concepts }) {
   return results.filter(r => {
     if (r.j >= jThreshold) return false;
     if (excludeBoards && excludeBoards.length && excludeBoards.includes(r.board)) return false;
     if (industries && industries.length && !industries.includes(r.industry)) return false;
+    if (concepts && concepts.length) {
+      const rc = r.concepts || [];
+      if (!concepts.some(c => rc.includes(c))) return false;
+    }
     const nearShort = Math.abs(r.deviationShort) <= tolerance;
     const nearBull = Math.abs(r.deviationBull) <= tolerance;
     return nearShort || nearBull;

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { fetchResults } from '../lib/api';
 
-const DEFAULTS = { klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [] };
+const DEFAULTS = { klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [] };
 
 function readURL() {
   const sp = new URLSearchParams(window.location.search);
@@ -11,6 +11,7 @@ function readURL() {
     tolerance: Number(sp.get('tolerance') ?? DEFAULTS.tolerance),
     industries: sp.get('industries') ? sp.get('industries').split(',') : [],
     excludeBoards: sp.get('excludeBoards') ? sp.get('excludeBoards').split(',') : [],
+    concepts: sp.get('concepts') ? sp.get('concepts').split(',') : [],
   };
 }
 
@@ -21,6 +22,7 @@ function writeURL(params) {
   if (params.tolerance !== DEFAULTS.tolerance) sp.set('tolerance', String(params.tolerance));
   if (params.industries.length) sp.set('industries', params.industries.join(','));
   if (params.excludeBoards.length) sp.set('excludeBoards', params.excludeBoards.join(','));
+  if (params.concepts.length) sp.set('concepts', params.concepts.join(','));
   const qs = sp.toString();
   const url = qs ? `?${qs}` : window.location.pathname;
   window.history.replaceState(null, '', url);

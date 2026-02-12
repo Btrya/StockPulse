@@ -16,6 +16,8 @@ export const KEY = {
   screenResult: (date, klt) => `screen:${date}:${klt}`,
   META: 'scan:meta',
   PROGRESS: 'scan:progress',
+  CONCEPTS_MAP: 'concepts:map',
+  CONCEPTS_META: 'concepts:meta',
 };
 
 // TTL (seconds)
@@ -23,6 +25,7 @@ export const TTL = {
   STOCKS: 86400,        // 24h
   SCREEN_RESULT: 172800, // 48h
   PROGRESS: 7200,        // 2h
+  CONCEPTS: 604800,      // 7d
 };
 
 // 市场板块分类

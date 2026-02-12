@@ -64,6 +64,18 @@ export async function getWeekly(tsCode, startDate) {
   return rows;
 }
 
+// 获取同花顺概念板块列表
+export async function getThsConceptList() {
+  const data = await tushareRequest('ths_index', { exchange: 'A', type: 'N' }, 'ts_code,name');
+  return parseData(data);
+}
+
+// 获取某概念板块的成分股
+export async function getThsMembers(tsCode) {
+  const data = await tushareRequest('ths_member', { ts_code: tsCode }, 'code');
+  return parseData(data);
+}
+
 // 批量获取行情（带限流）
 export async function batchGetKlines(stocks, klt = 'daily', startDate) {
   const { TUSHARE_DELAY_MS } = await import('./constants.js');

@@ -19,6 +19,7 @@ export default function App() {
         params={params}
         setParams={setParams}
         industries={meta?.industries}
+        concepts={meta?.concepts}
         onSearch={scan}
         loading={loading}
       />

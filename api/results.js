@@ -37,6 +37,8 @@ export default async function handler(req, res) {
     const industries = req.query.industries ? req.query.industries.split(',').filter(Boolean) : [];
     // 排除板块（逗号分隔：gem,star,bse）
     const excludeBoards = req.query.excludeBoards ? req.query.excludeBoards.split(',').filter(Boolean) : [];
+    // 概念过滤（逗号分隔，OR 逻辑）
+    const concepts = req.query.concepts ? req.query.concepts.split(',').filter(Boolean) : [];
 
     // 尝试从 Redis 读取扫描结果
     let data = null;
@@ -80,12 +82,18 @@ export default async function handler(req, res) {
           cached: false,
           message: '暂无扫描数据，请等待定时任务执行或手动触发扫描',
           industries: allIndustries,
+          concepts: [],
           boards: MARKET_BOARDS.map(b => ({ code: b.code, name: b.name })),
         },
       });
     }
 
-    const filtered = filterResults(data, { jThreshold: j, tolerance, industries, excludeBoards });
+    // 提取所有概念（去重排序）
+    const allConcepts = [...new Set(data.flatMap(r => r.concepts || []))].sort(
+      (a, b) => a.localeCompare(b, 'zh-CN')
+    );
+
+    const filtered = filterResults(data, { jThreshold: j, tolerance, industries, excludeBoards, concepts });
 
     filtered.sort((a, b) => {
       const va = a[sort] ?? 0;
@@ -102,6 +110,7 @@ export default async function handler(req, res) {
         klt,
         cached: true,
         industries: allIndustries,
+        concepts: allConcepts,
         boards: MARKET_BOARDS.map(b => ({ code: b.code, name: b.name })),
       },
     });

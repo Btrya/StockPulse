@@ -45,6 +45,10 @@ export default async function handler(req, res) {
     const hits = klt === 'daily' ? (progress.dailyHits || []) : (progress.weeklyHits || []);
     let processed = 0;
 
+    // 读取概念映射表
+    let conceptsMap = null;
+    try { conceptsMap = await redis.get(KEY.CONCEPTS_MAP); } catch {}
+
     const { getDaily, getWeekly } = await import('./_lib/tushare.js');
     const fn = klt === 'weekly' ? getWeekly : getDaily;
 
@@ -55,7 +59,10 @@ export default async function handler(req, res) {
       try {
         const klines = await fn(stock.ts_code, start);
         const result = screenStock({ ...stock, klines });
-        if (result) hits.push(result);
+        if (result) {
+          result.concepts = conceptsMap?.[stock.ts_code] || [];
+          hits.push(result);
+        }
       } catch { /* skip */ }
 
       idx++;

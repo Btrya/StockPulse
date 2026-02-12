@@ -12,15 +12,16 @@ const BOARD_OPTIONS = [
   { label: '北交所', value: 'bse' },
 ];
 
-export default function ParamPanel({ params, setParams, industries, onSearch, loading }) {
+export default function ParamPanel({ params, setParams, industries, concepts, onSearch, loading }) {
   const update = (key, val) => setParams(prev => ({ ...prev, [key]: val }));
 
   const industryOptions = (industries || []).map(i => ({ label: i, value: i }));
+  const conceptOptions = (concepts || []).map(c => ({ label: c, value: c }));
 
   return (
     <Card size="small" className="mb-4" styles={{ body: { padding: '16px' } }}>
       <div className="flex flex-col gap-4">
-        {/* 第一行：行业 + 排除板块 */}
+        {/* 第一行：行业 + 概念 + 排除板块 */}
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex flex-col gap-1 flex-1">
             <span className="text-xs text-slate-400">行业筛选（留空=全部）</span>
@@ -32,6 +33,21 @@ export default function ParamPanel({ params, setParams, industries, onSearch, lo
               options={industryOptions}
               value={params.industries}
               onChange={v => update('industries', v)}
+              maxTagCount="responsive"
+              style={{ width: '100%' }}
+              allowClear
+            />
+          </div>
+          <div className="flex flex-col gap-1 flex-1">
+            <span className="text-xs text-slate-400">概念筛选（OR 逻辑，留空=全部）</span>
+            <Select
+              mode="multiple"
+              showSearch
+              placeholder="选择概念（支持搜索）"
+              optionFilterProp="label"
+              options={conceptOptions}
+              value={params.concepts}
+              onChange={v => update('concepts', v)}
               maxTagCount="responsive"
               style={{ width: '100%' }}
               allowClear
@@ -94,7 +110,7 @@ export default function ParamPanel({ params, setParams, industries, onSearch, lo
             </Button>
             <Button
               icon={<ReloadOutlined />}
-              onClick={() => setParams({ klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [] })}
+              onClick={() => setParams({ klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [] })}
             >
               重置
             </Button>

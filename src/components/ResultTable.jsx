@@ -28,6 +28,24 @@ const columns = [
     onFilter: (value, record) => record.industry === value,
   },
   {
+    title: '概念',
+    dataIndex: 'concepts',
+    width: 120,
+    filters: [],
+    onFilter: (value, record) => (record.concepts || []).includes(value),
+    render: v => {
+      const list = v || [];
+      if (!list.length) return '-';
+      const show = list.slice(0, 3);
+      const rest = list.length - 3;
+      return (
+        <span className="text-xs">
+          {show.join('、')}{rest > 0 ? ` +${rest}` : ''}
+        </span>
+      );
+    },
+  },
+  {
     title: '收盘',
     dataIndex: 'close',
     width: 80,
@@ -97,13 +115,16 @@ const columns = [
 ];
 
 export default function ResultTable({ data }) {
-  // 动态生成行业 filter
+  // 动态生成行业 & 概念 filter
   const industries = [...new Set(data.map(r => r.industry).filter(Boolean))];
-  const cols = columns.map(c =>
-    c.dataIndex === 'industry'
-      ? { ...c, filters: industries.map(i => ({ text: i, value: i })) }
-      : c
+  const conceptSet = [...new Set(data.flatMap(r => r.concepts || []))].sort(
+    (a, b) => a.localeCompare(b, 'zh-CN')
   );
+  const cols = columns.map(c => {
+    if (c.dataIndex === 'industry') return { ...c, filters: industries.map(i => ({ text: i, value: i })) };
+    if (c.dataIndex === 'concepts') return { ...c, filters: conceptSet.map(i => ({ text: i, value: i })) };
+    return c;
+  });
 
   return (
     <Table

@@ -14,6 +14,7 @@ export function fetchResults(params) {
   if (params.tolerance != null) qs.set('tolerance', String(params.tolerance));
   if (params.industries?.length) qs.set('industries', params.industries.join(','));
   if (params.excludeBoards?.length) qs.set('excludeBoards', params.excludeBoards.join(','));
+  if (params.concepts?.length) qs.set('concepts', params.concepts.join(','));
   return request(`/results?${qs}`);
 }
 
@@ -22,6 +23,14 @@ export function triggerScan(body) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+  });
+}
+
+export function buildConcepts() {
+  return request('/concepts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}',
   });
 }
 

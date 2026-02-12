@@ -42,6 +42,10 @@ export default async function handler(req, res) {
     const hits = klt === 'daily' ? (progress.dailyHits || []) : (progress.weeklyHits || []);
     let processed = 0;
 
+    // 读取概念映射表
+    let conceptsMap = null;
+    try { conceptsMap = await redis.get(KEY.CONCEPTS_MAP); } catch {}
+
     // 逐只股票扫描
     while (idx < stocks.length) {
       if (Date.now() - startTime > TIMEOUT_MS) break;
@@ -53,7 +57,10 @@ export default async function handler(req, res) {
           : await (await import('./_lib/tushare.js')).getDaily(stock.ts_code, start);
 
         const result = screenStock({ ...stock, klines });
-        if (result) hits.push(result);
+        if (result) {
+          result.concepts = conceptsMap?.[stock.ts_code] || [];
+          hits.push(result);
+        }
       } catch {
         // 单只失败跳过
       }

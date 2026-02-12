@@ -17,6 +17,16 @@ export default function ResultCard({ item }) {
         </div>
         <Tag color={colorJ(item.j)} className="num m-0">J {item.j}</Tag>
       </div>
+      {item.concepts?.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {item.concepts.slice(0, 4).map(c => (
+            <Tag key={c} color="blue" className="m-0 text-xs">{c}</Tag>
+          ))}
+          {item.concepts.length > 4 && (
+            <span className="text-xs text-slate-400">+{item.concepts.length - 4}</span>
+          )}
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
         <div className="flex justify-between">
           <span className="text-slate-500">收盘</span>
