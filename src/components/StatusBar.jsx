@@ -53,6 +53,15 @@ export default function StatusBar() {
     };
   }, []);
 
+  // 检测到 Redis 有未完成进度时自动续扫（部署后恢复）
+  useEffect(() => {
+    if (status?.scanning && !scanning) {
+      setScanning(true);
+      setScanInfo(null);
+      continueScan();
+    }
+  }, [status?.scanning]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // 扫描中：显示进度
   if (scanning || status?.scanning) {
     const idx = scanInfo?.idx || status?.progress?.idx || 0;

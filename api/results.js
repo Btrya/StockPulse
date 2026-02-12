@@ -59,6 +59,18 @@ export default async function handler(req, res) {
       }
     }
 
+    // 从 Redis 读概念映射，动态附加到每条结果（不依赖扫描时写入）
+    if (data && data.length && redis.isConfigured()) {
+      try {
+        const conceptsMap = await redis.get(KEY.CONCEPTS_MAP);
+        if (conceptsMap) {
+          for (const r of data) {
+            r.concepts = conceptsMap[r.ts_code] || [];
+          }
+        }
+      } catch {}
+    }
+
     // 无论有没有扫描结果，都拿行业列表
     let allIndustries;
     if (data && data.length) {
