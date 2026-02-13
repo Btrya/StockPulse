@@ -1,4 +1,7 @@
+import { useMemo } from 'react';
 import { Card, Tag } from 'antd';
+import { FireFilled } from '@ant-design/icons';
+import { buildHotSets, getHotReasons } from '../hooks/useHotData';
 
 function colorJ(j) {
   if (j < -10) return 'green';
@@ -10,14 +13,23 @@ function touchLabel(t) {
   return t === 'H' ? '高' : '低';
 }
 
-export default function ResultCard({ item }) {
+export default function ResultCard({ item, hotData }) {
+  const hotSets = useMemo(() => buildHotSets(hotData), [hotData]);
+  const reasons = hotSets ? getHotReasons(item, hotSets) : [];
+  const isHot = reasons.length > 0;
+
   return (
-    <Card size="small">
+    <Card size="small" className={isHot ? 'hot-card' : ''}>
       <div className="flex justify-between items-center mb-2">
         <div>
           <span className="font-medium">{item.name}</span>
           <span className="text-xs text-slate-500 ml-2 num">{item.code}</span>
           {item.industry && <span className="text-xs text-slate-600 ml-2">{item.industry}</span>}
+          {reasons.map(r => (
+            <Tag key={r} color="volcano" className="m-0 ml-1 text-xs" style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>
+              <FireFilled /> {r}
+            </Tag>
+          ))}
         </div>
         <Tag color={colorJ(item.j)} className="num m-0">J {item.j}</Tag>
       </div>

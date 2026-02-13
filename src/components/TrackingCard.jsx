@@ -1,4 +1,7 @@
+import { useMemo } from 'react';
 import { Card, Tag } from 'antd';
+import { FireFilled } from '@ant-design/icons';
+import { buildHotSets, getHotReasons } from '../hooks/useHotData';
 
 function colorJ(j) {
   if (j < -10) return 'green';
@@ -12,17 +15,26 @@ function directionLabel(dir) {
   return { text: '持平', color: 'default' };
 }
 
-export default function TrackingCard({ item }) {
+export default function TrackingCard({ item, hotData }) {
+  const hotSets = useMemo(() => buildHotSets(hotData), [hotData]);
+  const hotTarget = { ts_code: item.ts_code, industry: item.industry, concepts: item.latest?.concepts || [] };
+  const reasons = hotSets ? getHotReasons(hotTarget, hotSets) : [];
+  const isHot = reasons.length > 0;
   const dir = directionLabel(item.jDirection);
   const daysColor = item.consecutiveDays >= 4 ? 'red' : item.consecutiveDays >= 3 ? 'orange' : 'blue';
 
   return (
-    <Card size="small">
+    <Card size="small" className={isHot ? 'hot-card' : ''}>
       <div className="flex justify-between items-center mb-2">
         <div>
           <span className="font-medium">{item.name}</span>
           <span className="text-xs text-slate-500 ml-2 num">{item.code}</span>
           {item.industry && <span className="text-xs text-slate-600 ml-2">{item.industry}</span>}
+          {reasons.map(r => (
+            <Tag key={r} color="volcano" className="m-0 ml-1 text-xs" style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>
+              <FireFilled /> {r}
+            </Tag>
+          ))}
         </div>
         <div className="flex gap-1">
           <Tag color={daysColor} className="m-0">连续{item.consecutiveDays}天</Tag>

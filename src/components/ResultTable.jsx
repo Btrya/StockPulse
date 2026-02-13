@@ -1,4 +1,7 @@
+import { useMemo } from 'react';
 import { Table, Tag } from 'antd';
+import { buildHotSets, getHotReasons } from '../hooks/useHotData';
+import { FireFilled } from '@ant-design/icons';
 
 function colorDev(d) {
   if (d > 0) return '#f87171';
@@ -126,7 +129,9 @@ const columns = [
   },
 ];
 
-export default function ResultTable({ data }) {
+export default function ResultTable({ data, hotData }) {
+  const hotSets = useMemo(() => buildHotSets(hotData), [hotData]);
+
   // 动态生成行业 & 概念 filter
   const industries = [...new Set(data.map(r => r.industry).filter(Boolean))];
   const conceptSet = [...new Set(data.flatMap(r => r.concepts || []))].sort(
@@ -135,8 +140,32 @@ export default function ResultTable({ data }) {
   const cols = columns.map(c => {
     if (c.dataIndex === 'industry') return { ...c, filters: industries.map(i => ({ text: i, value: i })) };
     if (c.dataIndex === 'concepts') return { ...c, filters: conceptSet.map(i => ({ text: i, value: i })) };
+    if (c.dataIndex === 'name' && hotSets) {
+      return {
+        ...c,
+        render: (v, record) => {
+          const reasons = getHotReasons(record, hotSets);
+          return (
+            <span>
+              {v}
+              {reasons.map(r => (
+                <Tag key={r} color="volcano" className="m-0 ml-1 text-xs" style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>
+                  <FireFilled /> {r}
+                </Tag>
+              ))}
+            </span>
+          );
+        },
+      };
+    }
     return c;
   });
+
+  const rowClassName = (record) => {
+    if (!hotSets) return '';
+    const reasons = getHotReasons(record, hotSets);
+    return reasons.length ? 'hot-row' : '';
+  };
 
   return (
     <Table
@@ -144,6 +173,7 @@ export default function ResultTable({ data }) {
       dataSource={data}
       rowKey="code"
       size="small"
+      rowClassName={rowClassName}
       pagination={{ pageSize: 50, showSizeChanger: true, showTotal: t => `共 ${t} 条` }}
       scroll={{ x: 900 }}
     />

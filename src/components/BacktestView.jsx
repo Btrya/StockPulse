@@ -11,6 +11,7 @@ export default function BacktestView({
   scanning, scanInfo,
   startBacktest, refresh, cleanup,
   sharedIndustries, sharedConcepts,
+  hotData,
 }) {
   useEffect(() => cleanup, [cleanup]);
 
@@ -64,12 +65,12 @@ export default function BacktestView({
           )}
 
           <div className="hidden md:block">
-            <ResultTable data={results} />
+            <ResultTable data={results} hotData={hotData} />
           </div>
 
           <div className="md:hidden flex flex-col gap-3">
             {results.map(item => (
-              <ResultCard key={item.code} item={item} />
+              <ResultCard key={item.code} item={item} hotData={hotData} />
             ))}
           </div>
         </div>

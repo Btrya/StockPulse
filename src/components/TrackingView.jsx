@@ -3,7 +3,7 @@ import TrackingPanel from './TrackingPanel';
 import TrackingTable from './TrackingTable';
 import TrackingCard from './TrackingCard';
 
-export default function TrackingView({ params, setParams, results, meta, loading, refresh, sharedIndustries, sharedConcepts }) {
+export default function TrackingView({ params, setParams, results, meta, loading, refresh, sharedIndustries, sharedConcepts, hotData }) {
   // 追踪结果有行业/概念就用，否则 fallback 到 screener 共享的列表
   const panelIndustries = meta?.industries?.length ? meta.industries : (sharedIndustries || []);
   const panelConcepts = meta?.concepts?.length ? meta.concepts : (sharedConcepts || []);
@@ -47,12 +47,12 @@ export default function TrackingView({ params, setParams, results, meta, loading
           )}
 
           <div className="hidden md:block">
-            <TrackingTable data={results} />
+            <TrackingTable data={results} hotData={hotData} />
           </div>
 
           <div className="md:hidden flex flex-col gap-3">
             {results.map(item => (
-              <TrackingCard key={item.ts_code} item={item} />
+              <TrackingCard key={item.ts_code} item={item} hotData={hotData} />
             ))}
           </div>
         </div>

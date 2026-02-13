@@ -100,6 +100,12 @@ export async function getThsMembers(tsCode) {
   return parseData(data);
 }
 
+// 获取同花顺热榜数据
+export async function getThsHot(tradeDate, market, isNew = 'Y') {
+  const data = await tushareRequest('ths_hot', { trade_date: tradeDate, market, is_new: isNew });
+  return parseData(data);
+}
+
 // 批量获取行情（带限流）
 export async function batchGetKlines(stocks, klt = 'daily', startDate) {
   const { TUSHARE_DELAY_MS } = await import('./constants.js');

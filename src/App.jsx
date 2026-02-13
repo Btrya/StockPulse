@@ -10,11 +10,13 @@ import StockSearch from './components/StockSearch';
 import useScreener from './hooks/useScreener';
 import useTracking from './hooks/useTracking';
 import useBacktest from './hooks/useBacktest';
+import useHotData from './hooks/useHotData';
 
 export default function App() {
   const screener = useScreener();
   const tracking = useTracking();
   const backtest = useBacktest();
+  const { hotData } = useHotData();
   const [activeTab, setActiveTab] = useState('screener');
 
   const handleTabChange = (key) => {
@@ -40,7 +42,7 @@ export default function App() {
             onSearch={screener.scan}
             loading={screener.loading}
           />
-          <ResultList results={screener.results} meta={screener.meta} loading={screener.loading} />
+          <ResultList results={screener.results} meta={screener.meta} loading={screener.loading} hotData={hotData} />
         </>
       ),
     },
@@ -57,6 +59,7 @@ export default function App() {
           refresh={tracking.refresh}
           sharedIndustries={sharedIndustries}
           sharedConcepts={sharedConcepts}
+          hotData={hotData}
         />
       ),
     },
@@ -79,6 +82,7 @@ export default function App() {
           cleanup={backtest.cleanup}
           sharedIndustries={sharedIndustries}
           sharedConcepts={sharedConcepts}
+          hotData={hotData}
         />
       ),
     },

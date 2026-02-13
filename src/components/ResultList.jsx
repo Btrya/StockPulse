@@ -2,7 +2,7 @@ import { Spin, Empty, Alert } from 'antd';
 import ResultTable from './ResultTable';
 import ResultCard from './ResultCard';
 
-export default function ResultList({ results, meta, loading }) {
+export default function ResultList({ results, meta, loading, hotData }) {
   if (loading) {
     return (
       <div className="text-center py-16">
@@ -44,12 +44,12 @@ export default function ResultList({ results, meta, loading }) {
       )}
 
       <div className="hidden md:block">
-        <ResultTable data={results} />
+        <ResultTable data={results} hotData={hotData} />
       </div>
 
       <div className="md:hidden flex flex-col gap-3">
         {results.map(item => (
-          <ResultCard key={item.code} item={item} />
+          <ResultCard key={item.code} item={item} hotData={hotData} />
         ))}
       </div>
     </div>

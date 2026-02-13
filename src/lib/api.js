@@ -73,3 +73,7 @@ export function fetchBacktestResults(params) {
 export function searchStocks(q) {
   return request(`/stock-search?q=${encodeURIComponent(q)}`);
 }
+
+export function fetchHotData() {
+  return request('/hot');
+}

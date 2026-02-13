@@ -21,6 +21,7 @@ export const KEY = {
   scanDates: (klt) => `scan:dates:${klt}`,
   backtestResult: (date, klt) => `backtest:${date}:${klt}`,
   BACKTEST_PROGRESS: 'backtest:progress',
+  HOT_DATA: 'hot:data',
 };
 
 // TTL (seconds)
@@ -31,6 +32,7 @@ export const TTL = {
   PROGRESS: 7200,              // 2h
   CONCEPTS: 604800,            // 7d
   BACKTEST_RESULT: 172800,     // 48h
+  HOT_DATA: 300,               // 5min
 };
 
 // 追踪窗口

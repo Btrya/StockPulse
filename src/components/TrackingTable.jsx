@@ -1,4 +1,7 @@
+import { useMemo } from 'react';
 import { Table, Tag } from 'antd';
+import { FireFilled } from '@ant-design/icons';
+import { buildHotSets, getHotReasons } from '../hooks/useHotData';
 
 function colorJ(j) {
   if (j < -10) return 'green';
@@ -119,12 +122,47 @@ const columns = [
   },
 ];
 
-export default function TrackingTable({ data }) {
+// 从 tracking record 构造 getHotReasons 需要的对象
+function toHotTarget(record) {
+  return {
+    ts_code: record.ts_code,
+    industry: record.industry,
+    concepts: record.latest?.concepts || [],
+  };
+}
+
+export default function TrackingTable({ data, hotData }) {
+  const hotSets = useMemo(() => buildHotSets(hotData), [hotData]);
+
   const industries = [...new Set(data.map(r => r.industry).filter(Boolean))];
   const cols = columns.map(c => {
     if (c.dataIndex === 'industry') return { ...c, filters: industries.map(i => ({ text: i, value: i })) };
+    if (c.dataIndex === 'name' && hotSets) {
+      return {
+        ...c,
+        render: (v, record) => {
+          const reasons = getHotReasons(toHotTarget(record), hotSets);
+          return (
+            <span>
+              {v}
+              {reasons.map(r => (
+                <Tag key={r} color="volcano" className="m-0 ml-1 text-xs" style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>
+                  <FireFilled /> {r}
+                </Tag>
+              ))}
+            </span>
+          );
+        },
+      };
+    }
     return c;
   });
+
+  const rowClassName = (record) => {
+    if (!hotSets) return '';
+    const reasons = getHotReasons(toHotTarget(record), hotSets);
+    return reasons.length ? 'hot-row' : '';
+  };
 
   return (
     <Table
@@ -132,6 +170,7 @@ export default function TrackingTable({ data }) {
       dataSource={data}
       rowKey="ts_code"
       size="small"
+      rowClassName={rowClassName}
       pagination={{ pageSize: 50, showSizeChanger: true, showTotal: t => `共 ${t} 条` }}
       scroll={{ x: 1000 }}
     />
