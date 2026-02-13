@@ -28,12 +28,23 @@ export default async function handler(req, res) {
     // 获取股票列表
     let stocks;
     if (progress && progress.date === today && progress.stocks) {
-      stocks = progress.stocks;
+      // 检查是否需要收盘后重新扫描：如果已有数据是盘中扫的，收盘后 cron 应该重新来
+      const now = new Date();
+      const closeToday = new Date(today + 'T07:00:00Z'); // 15:00 CST = 07:00 UTC
+      const stale = progress.startedAt && now >= closeToday && new Date(progress.startedAt) < closeToday;
+      if (stale) {
+        stocks = await getStockList();
+        stocks = stocks.filter(s => !s.name.includes('ST') && !s.name.includes('退'));
+        progress = { date: today, stocks, idx: 0, dailyHits: [], weeklyHits: [], startedAt: now.toISOString() };
+        await redis.set(KEY.PROGRESS, progress, TTL.PROGRESS);
+      } else {
+        stocks = progress.stocks;
+      }
     } else {
       stocks = await getStockList();
       // 过滤 ST 和 退市
       stocks = stocks.filter(s => !s.name.includes('ST') && !s.name.includes('退'));
-      progress = { date: today, stocks, idx: 0, dailyHits: [], weeklyHits: [] };
+      progress = { date: today, stocks, idx: 0, dailyHits: [], weeklyHits: [], startedAt: new Date().toISOString() };
       await redis.set(KEY.PROGRESS, progress, TTL.PROGRESS);
     }
 

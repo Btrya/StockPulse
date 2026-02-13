@@ -3,14 +3,18 @@ import TrackingPanel from './TrackingPanel';
 import TrackingTable from './TrackingTable';
 import TrackingCard from './TrackingCard';
 
-export default function TrackingView({ params, setParams, results, meta, loading, refresh }) {
+export default function TrackingView({ params, setParams, results, meta, loading, refresh, sharedIndustries, sharedConcepts }) {
+  // 追踪结果有行业/概念就用，否则 fallback 到 screener 共享的列表
+  const panelIndustries = meta?.industries?.length ? meta.industries : (sharedIndustries || []);
+  const panelConcepts = meta?.concepts?.length ? meta.concepts : (sharedConcepts || []);
+
   return (
     <div>
       <TrackingPanel
         params={params}
         setParams={setParams}
-        industries={meta?.industries}
-        concepts={meta?.concepts}
+        industries={panelIndustries}
+        concepts={panelConcepts}
         onSearch={refresh}
         loading={loading}
       />

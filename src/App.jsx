@@ -21,6 +21,10 @@ export default function App() {
     if (key === 'tracking') tracking.activate();
   };
 
+  // 共享行业/概念列表（screener 自动加载，作为其他 tab 的 fallback）
+  const sharedIndustries = screener.meta?.industries || [];
+  const sharedConcepts = screener.meta?.concepts || [];
+
   const items = [
     {
       key: 'screener',
@@ -50,6 +54,8 @@ export default function App() {
           meta={tracking.meta}
           loading={tracking.loading}
           refresh={tracking.refresh}
+          sharedIndustries={sharedIndustries}
+          sharedConcepts={sharedConcepts}
         />
       ),
     },
@@ -74,13 +80,15 @@ export default function App() {
           startBacktest={backtest.startBacktest}
           refresh={backtest.refresh}
           cleanup={backtest.cleanup}
+          sharedIndustries={sharedIndustries}
+          sharedConcepts={sharedConcepts}
         />
       ),
     },
   ];
 
   return (
-    <Layout>
+    <Layout scanKlt={screener.params.klt}>
       <Tabs
         activeKey={activeTab}
         onChange={handleTabChange}

@@ -12,6 +12,7 @@ export default function BacktestView({
   results, meta, loading,
   scanning, scanInfo,
   startBacktest, refresh, cleanup,
+  sharedIndustries, sharedConcepts,
 }) {
   useEffect(() => cleanup, [cleanup]);
 
@@ -19,9 +20,12 @@ export default function BacktestView({
     startBacktest(date, params.klt, backtestIndustries, backtestConcepts, false);
   };
 
-  // 从结果 meta 或最新 results 拿行业/概念列表（用于面板筛选）
-  const industries = meta?.industries || [];
-  const concepts = meta?.concepts || [];
+  // 范围选择器：用 screener 共享的全量行业/概念列表（回测前就需要）
+  const scopeIndustries = sharedIndustries || [];
+  const scopeConcepts = sharedConcepts || [];
+  // 结果筛选器：用回测结果的行业/概念列表，fallback 到共享列表
+  const resultIndustries = meta?.industries?.length ? meta.industries : scopeIndustries;
+  const resultConcepts = meta?.concepts?.length ? meta.concepts : scopeConcepts;
 
   return (
     <div>
@@ -34,8 +38,10 @@ export default function BacktestView({
         setBacktestIndustries={setBacktestIndustries}
         backtestConcepts={backtestConcepts}
         setBacktestConcepts={setBacktestConcepts}
-        industries={industries}
-        concepts={concepts}
+        scopeIndustries={scopeIndustries}
+        scopeConcepts={scopeConcepts}
+        resultIndustries={resultIndustries}
+        resultConcepts={resultConcepts}
         onStartBacktest={handleStartBacktest}
         onSearch={refresh}
         scanning={scanning}

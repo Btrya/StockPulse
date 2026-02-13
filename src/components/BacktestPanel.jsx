@@ -18,14 +18,17 @@ export default function BacktestPanel({
   date, setDate,
   backtestIndustries, setBacktestIndustries,
   backtestConcepts, setBacktestConcepts,
-  industries, concepts,
+  scopeIndustries, scopeConcepts,
+  resultIndustries, resultConcepts,
   onStartBacktest, onSearch,
   scanning, scanInfo, loading, hasResults,
 }) {
   const update = (key, val) => setParams(prev => ({ ...prev, [key]: val }));
 
-  const industryOptions = (industries || []).map(i => ({ label: i, value: i }));
-  const conceptOptions = (concepts || []).map(c => ({ label: c, value: c }));
+  const scopeIndustryOpts = (scopeIndustries || []).map(i => ({ label: i, value: i }));
+  const scopeConceptOpts = (scopeConcepts || []).map(c => ({ label: c, value: c }));
+  const resultIndustryOpts = (resultIndustries || []).map(i => ({ label: i, value: i }));
+  const resultConceptOpts = (resultConcepts || []).map(c => ({ label: c, value: c }));
 
   const pct = scanInfo?.total ? Math.round((scanInfo.idx / scanInfo.total) * 100) : 0;
 
@@ -62,7 +65,7 @@ export default function BacktestPanel({
               showSearch
               placeholder="留空=全部行业（耗时较长）"
               optionFilterProp="label"
-              options={industryOptions}
+              options={scopeIndustryOpts}
               value={backtestIndustries}
               onChange={setBacktestIndustries}
               maxTagCount="responsive"
@@ -77,7 +80,7 @@ export default function BacktestPanel({
               showSearch
               placeholder="留空=全部概念"
               optionFilterProp="label"
-              options={conceptOptions}
+              options={scopeConceptOpts}
               value={backtestConcepts}
               onChange={setBacktestConcepts}
               maxTagCount="responsive"
@@ -120,9 +123,24 @@ export default function BacktestPanel({
                 showSearch
                 placeholder="筛选行业"
                 optionFilterProp="label"
-                options={industryOptions}
+                options={resultIndustryOpts}
                 value={params.industries}
                 onChange={v => update('industries', v)}
+                maxTagCount="responsive"
+                style={{ width: '100%' }}
+                allowClear
+              />
+            </div>
+            <div className="flex flex-col gap-1 flex-1">
+              <span className="text-xs text-slate-400">结果概念筛选</span>
+              <Select
+                mode="multiple"
+                showSearch
+                placeholder="筛选概念"
+                optionFilterProp="label"
+                options={resultConceptOpts}
+                value={params.concepts}
+                onChange={v => update('concepts', v)}
                 maxTagCount="responsive"
                 style={{ width: '100%' }}
                 allowClear

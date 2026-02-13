@@ -10,33 +10,51 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const startTime = Date.now();
-  const today = new Date().toISOString().slice(0, 10);
-  const start = new Date(Date.now() - 200 * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
   const body = req.body || {};
-  const requestedKlt = body.klt || null; // null = 自动从进度继续
 
   try {
     if (!redis.isConfigured()) {
       return res.json({ error: 'Redis 未配置' });
     }
 
+    // 取消扫描
+    if (body.cancel) {
+      await redis.del(KEY.PROGRESS);
+      return res.json({ cancelled: true });
+    }
+
+    const startTime = Date.now();
+    const today = new Date().toISOString().slice(0, 10);
+    const start = new Date(Date.now() - 200 * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
+    const requestedKlt = body.klt || null;
+
     // 读取进度（与 cron 共享同一个 progress key）
     let progress = await redis.get(KEY.PROGRESS);
 
-    // 是否需要重新开始
     const forceReset = body.reset === true;
 
     if (forceReset || !progress || progress.date !== today || !progress.stocks) {
+      // 全新扫描
       const stocks = (await getStockList()).filter(s => !s.name.includes('ST') && !s.name.includes('退'));
       progress = {
         date: today,
         stocks,
         idx: 0,
         currentKlt: requestedKlt || 'daily',
+        singleKlt: !!requestedKlt,
         dailyHits: [],
         weeklyHits: [],
+        startedAt: new Date().toISOString(),
       };
+      await redis.set(KEY.PROGRESS, progress, TTL.PROGRESS);
+    } else if (requestedKlt && progress.currentKlt !== requestedKlt) {
+      // 用户指定了不同的 klt，切换过去（保留已完成的另一个 klt 数据）
+      progress.currentKlt = requestedKlt;
+      progress.singleKlt = true;
+      progress.idx = 0;
+      progress.startedAt = new Date().toISOString();
+      if (requestedKlt === 'daily') progress.dailyHits = [];
+      else progress.weeklyHits = [];
       await redis.set(KEY.PROGRESS, progress, TTL.PROGRESS);
     }
 
@@ -102,11 +120,13 @@ export default async function handler(req, res) {
       if (dates.length > maxLen) dates.length = maxLen;
       await redis.set(KEY.scanDates(klt), dates, screenTTL);
 
-      if (klt === 'daily') {
+      if (klt === 'daily' && !progress.singleKlt) {
+        // 非单 klt 模式：自动切到周线
         progress.currentKlt = 'weekly';
         progress.idx = 0;
         progress.weeklyHits = [];
       } else {
+        // 单 klt 模式或周线已完成：结束
         progress.currentKlt = null;
         progress.idx = 0;
       }
