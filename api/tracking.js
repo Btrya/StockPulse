@@ -133,9 +133,11 @@ export default async function handler(req, res) {
         const rc = r.concepts || [];
         if (!concepts.some(c => rc.includes(c))) return false;
       }
-      const nearShort = Math.abs(r.deviationShort) <= tolerance;
-      const nearBull = Math.abs(r.deviationBull) <= tolerance;
-      return nearShort || nearBull;
+      const nearShortLow = Math.abs(r.deviationShort) <= tolerance;
+      const nearBullLow = Math.abs(r.deviationBull) <= tolerance;
+      const nearShortHigh = Math.abs(r.deviationShortHigh ?? Infinity) <= tolerance;
+      const nearBullHigh = Math.abs(r.deviationBullHigh ?? Infinity) <= tolerance;
+      return nearShortLow || nearBullLow || nearShortHigh || nearBullHigh;
     });
 
     // 按 consecutiveDays 降序，同天数按 J 值升序

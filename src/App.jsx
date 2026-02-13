@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Tabs } from 'antd';
-import { FilterOutlined, LineChartOutlined, ExperimentOutlined } from '@ant-design/icons';
+import { FilterOutlined, LineChartOutlined, ExperimentOutlined, SearchOutlined } from '@ant-design/icons';
 import Layout from './components/Layout';
 import ParamPanel from './components/ParamPanel';
 import ResultList from './components/ResultList';
 import TrackingView from './components/TrackingView';
 import BacktestView from './components/BacktestView';
+import StockSearch from './components/StockSearch';
 import useScreener from './hooks/useScreener';
 import useTracking from './hooks/useTracking';
 import useBacktest from './hooks/useBacktest';
@@ -86,6 +87,11 @@ export default function App() {
           sharedConcepts={sharedConcepts}
         />
       ),
+    },
+    {
+      key: 'search',
+      label: <span><SearchOutlined /> 查询</span>,
+      children: <StockSearch />,
     },
   ];
 

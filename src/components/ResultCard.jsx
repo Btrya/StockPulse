@@ -37,12 +37,24 @@ export default function ResultCard({ item }) {
           <span className="num">{item.low}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-slate-500">短期趋势</span>
+          <span className="text-slate-500">最高</span>
+          <span className="num">{item.high ?? '-'}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-slate-500">短趋(低)</span>
           <span className="num">{item.shortTrend} ({item.deviationShort > 0 ? '+' : ''}{item.deviationShort}%)</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-slate-500">多空线</span>
+          <span className="text-slate-500">短趋(高)</span>
+          <span className="num">{item.deviationShortHigh != null ? `${item.deviationShortHigh > 0 ? '+' : ''}${item.deviationShortHigh}%` : '-'}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-slate-500">多空(低)</span>
           <span className="num">{item.bullBear} ({item.deviationBull > 0 ? '+' : ''}{item.deviationBull}%)</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-slate-500">多空(高)</span>
+          <span className="num">{item.deviationBullHigh != null ? `${item.deviationBullHigh > 0 ? '+' : ''}${item.deviationBullHigh}%` : '-'}</span>
         </div>
       </div>
     </Card>

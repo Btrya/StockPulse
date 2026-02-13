@@ -1,5 +1,5 @@
 // 宽阈值：存 Redis 用，查询时按用户参数收窄
-export const WIDE_J_THRESHOLD = 20;
+export const WIDE_J_THRESHOLD = 13;
 export const WIDE_TOLERANCE = 5;
 
 // 默认用户参数

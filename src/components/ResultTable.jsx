@@ -62,6 +62,14 @@ const columns = [
     render: v => <span className="num">{v}</span>,
   },
   {
+    title: '最高',
+    dataIndex: 'high',
+    width: 80,
+    align: 'right',
+    sorter: (a, b) => (a.high || 0) - (b.high || 0),
+    render: v => <span className="num">{v ?? '-'}</span>,
+  },
+  {
     title: '短期趋势',
     dataIndex: 'shortTrend',
     width: 90,
@@ -69,9 +77,9 @@ const columns = [
     render: v => <span className="num">{v}</span>,
   },
   {
-    title: '短期偏离',
+    title: '短期偏离(低)',
     dataIndex: 'deviationShort',
-    width: 90,
+    width: 100,
     align: 'right',
     sorter: (a, b) => a.deviationShort - b.deviationShort,
     render: v => (
@@ -81,6 +89,18 @@ const columns = [
     ),
   },
   {
+    title: '短期偏离(高)',
+    dataIndex: 'deviationShortHigh',
+    width: 100,
+    align: 'right',
+    sorter: (a, b) => (a.deviationShortHigh ?? 0) - (b.deviationShortHigh ?? 0),
+    render: v => v != null ? (
+      <span className="num" style={{ color: colorDev(v) }}>
+        {v > 0 ? '+' : ''}{v}%
+      </span>
+    ) : '-',
+  },
+  {
     title: '多空线',
     dataIndex: 'bullBear',
     width: 90,
@@ -88,9 +108,9 @@ const columns = [
     render: v => <span className="num">{v}</span>,
   },
   {
-    title: '多空偏离',
+    title: '多空偏离(低)',
     dataIndex: 'deviationBull',
-    width: 90,
+    width: 100,
     align: 'right',
     sorter: (a, b) => a.deviationBull - b.deviationBull,
     render: v => (
@@ -98,6 +118,18 @@ const columns = [
         {v > 0 ? '+' : ''}{v}%
       </span>
     ),
+  },
+  {
+    title: '多空偏离(高)',
+    dataIndex: 'deviationBullHigh',
+    width: 100,
+    align: 'right',
+    sorter: (a, b) => (a.deviationBullHigh ?? 0) - (b.deviationBullHigh ?? 0),
+    render: v => v != null ? (
+      <span className="num" style={{ color: colorDev(v) }}>
+        {v > 0 ? '+' : ''}{v}%
+      </span>
+    ) : '-',
   },
   {
     title: 'J 值',

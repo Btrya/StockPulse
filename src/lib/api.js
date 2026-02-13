@@ -69,3 +69,7 @@ export function fetchBacktestResults(params) {
   if (params.concepts?.length) qs.set('concepts', params.concepts.join(','));
   return request(`/backtest-results?${qs}`);
 }
+
+export function searchStocks(q) {
+  return request(`/stock-search?q=${encodeURIComponent(q)}`);
+}

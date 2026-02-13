@@ -1,5 +1,7 @@
+import { useState, useRef } from 'react';
 import { DatePicker, Select, InputNumber, Radio, Button, Space, Card, Checkbox, Progress } from 'antd';
 import { ExperimentOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { searchStocks } from '../lib/api';
 import dayjs from 'dayjs';
 
 const KLT_OPTIONS = [
@@ -25,6 +27,26 @@ export default function BacktestPanel({
   scanning, scanInfo, loading, hasResults,
 }) {
   const update = (key, val) => setParams(prev => ({ ...prev, [key]: val }));
+
+  const [stockOptions, setStockOptions] = useState([]);
+  const [stockSearching, setStockSearching] = useState(false);
+  const searchTimer = useRef(null);
+
+  const handleStockSearch = (val) => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (!val.trim()) { setStockOptions([]); return; }
+    setStockSearching(true);
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const res = await searchStocks(val.trim());
+        setStockOptions((res.data || []).map(s => ({
+          label: `${s.code} ${s.name} (${s.industry})`,
+          value: s.code,
+        })));
+      } catch { setStockOptions([]); }
+      setStockSearching(false);
+    }, 300);
+  };
 
   const scopeIndustryOpts = (scopeIndustries || []).map(i => ({ label: i, value: i }));
   const scopeConceptOpts = (scopeConcepts || []).map(c => ({ label: c, value: c }));
@@ -91,19 +113,23 @@ export default function BacktestPanel({
           </div>
         </div>
 
-        {/* 第二行：指定股票代码 */}
+        {/* 第二行：指定股票 */}
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-slate-400">指定股票代码（可选，填写后忽略行业/概念范围）</span>
+          <span className="text-xs text-slate-400">指定股票（可选，输入代码或名称搜索，填写后忽略行业/概念范围）</span>
           <Select
-            mode="tags"
-            placeholder="输入代码回车添加，如 000001、600519"
+            mode="multiple"
+            showSearch
+            placeholder="输入代码或名称搜索，如 000001 或 平安银行"
             value={backtestCodes}
             onChange={setBacktestCodes}
+            onSearch={handleStockSearch}
+            options={stockOptions}
+            filterOption={false}
+            loading={stockSearching}
             maxTagCount="responsive"
             style={{ width: '100%' }}
             allowClear
-            tokenSeparators={[',', ' ', '\u3001', '\uff0c']}
-            notFoundContent={null}
+            notFoundContent={stockSearching ? '搜索中...' : null}
           />
         </div>
 

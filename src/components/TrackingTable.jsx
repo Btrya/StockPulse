@@ -93,9 +93,9 @@ const columns = [
     render: v => <span className="num">{v}</span>,
   },
   {
-    title: '短期偏离',
+    title: '短期偏离(低)',
     dataIndex: ['latest', 'deviationShort'],
-    width: 90,
+    width: 100,
     align: 'right',
     render: v => (
       <span className="num" style={{ color: colorDev(v) }}>
@@ -104,15 +104,37 @@ const columns = [
     ),
   },
   {
-    title: '多空偏离',
+    title: '短期偏离(高)',
+    dataIndex: ['latest', 'deviationShortHigh'],
+    width: 100,
+    align: 'right',
+    render: v => v != null ? (
+      <span className="num" style={{ color: colorDev(v) }}>
+        {v > 0 ? '+' : ''}{v}%
+      </span>
+    ) : '-',
+  },
+  {
+    title: '多空偏离(低)',
     dataIndex: ['latest', 'deviationBull'],
-    width: 90,
+    width: 100,
     align: 'right',
     render: v => (
       <span className="num" style={{ color: colorDev(v) }}>
         {v > 0 ? '+' : ''}{v}%
       </span>
     ),
+  },
+  {
+    title: '多空偏离(高)',
+    dataIndex: ['latest', 'deviationBullHigh'],
+    width: 100,
+    align: 'right',
+    render: v => v != null ? (
+      <span className="num" style={{ color: colorDev(v) }}>
+        {v > 0 ? '+' : ''}{v}%
+      </span>
+    ) : '-',
   },
 ];
 

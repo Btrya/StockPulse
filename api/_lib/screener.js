@@ -2,7 +2,8 @@ import { shortTrendLine, bullBearLine, kdj } from './indicators.js';
 import { WIDE_J_THRESHOLD, WIDE_TOLERANCE, getMarketBoard } from './constants.js';
 
 // 对单只股票计算指标，宽阈值筛选
-export function screenStock(stock) {
+// opts.jThreshold / opts.tolerance 可覆盖默认 WIDE 阈值
+export function screenStock(stock, opts = {}) {
   const { klines, ts_code, symbol, name, industry } = stock;
   if (!klines || klines.length < 120) return null;
 
@@ -17,17 +18,28 @@ export function screenStock(stock) {
   const { k, d, j } = kdj(highs, lows, closes);
   if (j === null) return null;
 
-  if (j >= WIDE_J_THRESHOLD) return null;
+  const jMax = opts.jThreshold ?? WIDE_J_THRESHOLD;
+  const tol = opts.tolerance ?? WIDE_TOLERANCE;
+
+  if (j >= jMax) return null;
 
   const todayLow = lows[lows.length - 1];
+  const todayHigh = highs[highs.length - 1];
   const todayClose = closes[closes.length - 1];
 
+  // 最低价偏离（下影线 / 实体下沿触线）
   const deviationShort = ((todayLow - shortTrend) / shortTrend) * 100;
   const deviationBull = ((todayLow - bullBear) / bullBear) * 100;
+  // 最高价偏离（上影线触线）
+  const deviationShortHigh = ((todayHigh - shortTrend) / shortTrend) * 100;
+  const deviationBullHigh = ((todayHigh - bullBear) / bullBear) * 100;
 
-  const nearShort = Math.abs(deviationShort) <= WIDE_TOLERANCE;
-  const nearBull = Math.abs(deviationBull) <= WIDE_TOLERANCE;
-  if (!nearShort && !nearBull) return null;
+  // low 或 high 任一接近趋势线即命中
+  const nearShortLow = Math.abs(deviationShort) <= tol;
+  const nearBullLow = Math.abs(deviationBull) <= tol;
+  const nearShortHigh = Math.abs(deviationShortHigh) <= tol;
+  const nearBullHigh = Math.abs(deviationBullHigh) <= tol;
+  if (!nearShortLow && !nearBullLow && !nearShortHigh && !nearBullHigh) return null;
 
   const code = symbol || ts_code.split('.')[0];
   const board = getMarketBoard(code);
@@ -39,6 +51,7 @@ export function screenStock(stock) {
     industry: industry || '',
     board,
     low: round2(todayLow),
+    high: round2(todayHigh),
     close: round2(todayClose),
     shortTrend: round2(shortTrend),
     bullBear: round2(bullBear),
@@ -47,6 +60,8 @@ export function screenStock(stock) {
     j: round2(j),
     deviationShort: round2(deviationShort),
     deviationBull: round2(deviationBull),
+    deviationShortHigh: round2(deviationShortHigh),
+    deviationBullHigh: round2(deviationBullHigh),
   };
 }
 
@@ -60,9 +75,11 @@ export function filterResults(results, { jThreshold, tolerance, industries, excl
       const rc = r.concepts || [];
       if (!concepts.some(c => rc.includes(c))) return false;
     }
-    const nearShort = Math.abs(r.deviationShort) <= tolerance;
-    const nearBull = Math.abs(r.deviationBull) <= tolerance;
-    return nearShort || nearBull;
+    const nearShortLow = Math.abs(r.deviationShort) <= tolerance;
+    const nearBullLow = Math.abs(r.deviationBull) <= tolerance;
+    const nearShortHigh = Math.abs(r.deviationShortHigh ?? Infinity) <= tolerance;
+    const nearBullHigh = Math.abs(r.deviationBullHigh ?? Infinity) <= tolerance;
+    return nearShortLow || nearBullLow || nearShortHigh || nearBullHigh;
   });
 }
 
