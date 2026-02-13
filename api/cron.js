@@ -14,8 +14,6 @@ export default async function handler(req, res) {
 
   const startTime = Date.now();
   const today = new Date().toISOString().slice(0, 10);
-  // 起始日期：往前推 200 天
-  const start = new Date(Date.now() - 200 * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
 
   try {
     if (!redis.isConfigured()) {
@@ -52,6 +50,10 @@ export default async function handler(req, res) {
     let idx = progress.idx || 0;
     const hits = klt === 'daily' ? (progress.dailyHits || []) : (progress.weeklyHits || []);
     let processed = 0;
+
+    // 周线需要更长回溯期：120 根周 K 线 ≈ 840 天，取 900 天
+    const lookbackDays = klt === 'weekly' ? 900 : 200;
+    const start = new Date(Date.now() - lookbackDays * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
 
     // 读取概念映射表
     let conceptsMap = null;

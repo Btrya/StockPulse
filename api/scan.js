@@ -25,7 +25,6 @@ export default async function handler(req, res) {
 
     const startTime = Date.now();
     const today = new Date().toISOString().slice(0, 10);
-    const start = new Date(Date.now() - 200 * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
     const requestedKlt = body.klt || null;
 
     // 读取进度（与 cron 共享同一个 progress key）
@@ -62,6 +61,10 @@ export default async function handler(req, res) {
     let idx = progress.idx || 0;
     const hits = klt === 'daily' ? (progress.dailyHits || []) : (progress.weeklyHits || []);
     let processed = 0;
+
+    // 周线需要更长回溯期：120 根周 K 线 ≈ 840 天，取 900 天
+    const lookbackDays = klt === 'weekly' ? 900 : 200;
+    const start = new Date(Date.now() - lookbackDays * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
 
     // 读取概念映射表
     let conceptsMap = null;

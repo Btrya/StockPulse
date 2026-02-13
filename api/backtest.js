@@ -70,8 +70,9 @@ export default async function handler(req, res) {
 
     // endDate 格式化
     const endDate = date.replace(/-/g, '');
-    // startDate = date - 280 天
-    const startMs = new Date(date).getTime() - 280 * 86400000;
+    // 周线需要更长回溯期：120 根周 K 线 ≈ 840 天，取 900 天
+    const lookbackDays = klt === 'weekly' ? 900 : 280;
+    const startMs = new Date(date).getTime() - lookbackDays * 86400000;
     const startDate = new Date(startMs).toISOString().slice(0, 10).replace(/-/g, '');
 
     const { getDailyRange, getWeeklyRange } = await import('./_lib/tushare.js');
