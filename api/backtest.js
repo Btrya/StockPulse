@@ -37,17 +37,18 @@ export default async function handler(req, res) {
       return res.json({ error: 'Redis 未配置' });
     }
 
-    // 检查缓存 — 统一使用 screen key
-    if (!reset) {
+    // 读取进度（独立于日常扫描）
+    let progress = await redis.get(KEY.BACKTEST_PROGRESS);
+
+    // 检查缓存 — 仅在该日期无进行中扫描时命中（否则中间写入会被误判为完成）
+    const scanningThis = progress && progress.date === date && progress.klt === klt;
+    if (!reset && !scanningThis) {
       const cached = await redis.get(KEY.screenResult(date, klt));
       const hits = Array.isArray(cached) ? cached : (cached?.hits || null);
       if (hits) {
         return res.json({ processed: hits.length, total: hits.length, idx: hits.length, done: true, needContinue: false, hits: hits.length });
       }
     }
-
-    // 读取进度（独立于日常扫描）
-    let progress = await redis.get(KEY.BACKTEST_PROGRESS);
 
     const forceReset = reset === true;
     let needNew = forceReset || !progress || progress.date !== date || progress.klt !== klt || !progress.stocks;
