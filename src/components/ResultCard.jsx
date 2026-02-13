@@ -6,6 +6,10 @@ function colorJ(j) {
   return 'gold';
 }
 
+function touchLabel(t) {
+  return t === 'H' ? '高' : '低';
+}
+
 export default function ResultCard({ item }) {
   return (
     <Card size="small">
@@ -33,28 +37,16 @@ export default function ResultCard({ item }) {
           <span className="num">{item.close}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-slate-500">最低</span>
-          <span className="num">{item.low}</span>
+          <span className="text-slate-500">最低 / 最高</span>
+          <span className="num">{item.low} / {item.high ?? '-'}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-slate-500">最高</span>
-          <span className="num">{item.high ?? '-'}</span>
+          <span className="text-slate-500">短趋偏离</span>
+          <span className="num">{item.deviationShort > 0 ? '+' : ''}{item.deviationShort}% <span className="text-slate-500">{touchLabel(item.touchShort)}</span></span>
         </div>
         <div className="flex justify-between">
-          <span className="text-slate-500">短趋(低)</span>
-          <span className="num">{item.shortTrend} ({item.deviationShort > 0 ? '+' : ''}{item.deviationShort}%)</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-slate-500">短趋(高)</span>
-          <span className="num">{item.deviationShortHigh != null ? `${item.deviationShortHigh > 0 ? '+' : ''}${item.deviationShortHigh}%` : '-'}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-slate-500">多空(低)</span>
-          <span className="num">{item.bullBear} ({item.deviationBull > 0 ? '+' : ''}{item.deviationBull}%)</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-slate-500">多空(高)</span>
-          <span className="num">{item.deviationBullHigh != null ? `${item.deviationBullHigh > 0 ? '+' : ''}${item.deviationBullHigh}%` : '-'}</span>
+          <span className="text-slate-500">多空偏离</span>
+          <span className="num">{item.deviationBull > 0 ? '+' : ''}{item.deviationBull}% <span className="text-slate-500">{touchLabel(item.touchBull)}</span></span>
         </div>
       </div>
     </Card>

@@ -57,24 +57,24 @@ export default function TrackingCard({ item }) {
           <span className="num">{item.latest?.close}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-slate-500">最低</span>
-          <span className="num">{item.latest?.low}</span>
+          <span className="text-slate-500">最新J</span>
+          <Tag color={colorJ(item.latest?.j)} className="num m-0">{item.latest?.j}</Tag>
         </div>
         <div className="flex justify-between">
-          <span className="text-slate-500">短趋偏离(低)</span>
-          <span className="num">{item.latest?.deviationShort > 0 ? '+' : ''}{item.latest?.deviationShort}%</span>
+          <span className="text-slate-500">短期偏离</span>
+          <span className="num">
+            {item.latest?.deviationShort != null
+              ? <>{item.latest.deviationShort > 0 ? '+' : ''}{item.latest.deviationShort}% <span className="text-slate-500">{item.latest.touchShort === 'H' ? '高' : '低'}</span></>
+              : '-'}
+          </span>
         </div>
         <div className="flex justify-between">
-          <span className="text-slate-500">短趋偏离(高)</span>
-          <span className="num">{item.latest?.deviationShortHigh != null ? `${item.latest.deviationShortHigh > 0 ? '+' : ''}${item.latest.deviationShortHigh}%` : '-'}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-slate-500">多空偏离(低)</span>
-          <span className="num">{item.latest?.deviationBull > 0 ? '+' : ''}{item.latest?.deviationBull}%</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-slate-500">多空偏离(高)</span>
-          <span className="num">{item.latest?.deviationBullHigh != null ? `${item.latest.deviationBullHigh > 0 ? '+' : ''}${item.latest.deviationBullHigh}%` : '-'}</span>
+          <span className="text-slate-500">多空偏离</span>
+          <span className="num">
+            {item.latest?.deviationBull != null
+              ? <>{item.latest.deviationBull > 0 ? '+' : ''}{item.latest.deviationBull}% <span className="text-slate-500">{item.latest.touchBull === 'H' ? '高' : '低'}</span></>
+              : '-'}
+          </span>
         </div>
       </div>
 

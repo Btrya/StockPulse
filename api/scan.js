@@ -44,6 +44,8 @@ export default async function handler(req, res) {
     if (forceReset || !progress || progress.date !== today || !progress.stocks) {
       // 全新扫描
       const stocks = (await getStockList()).filter(s => !s.name.includes('ST') && !s.name.includes('退'));
+      // 写入 stocks:list 供查询 tab 使用
+      await redis.set(KEY.STOCKS, stocks, TTL.STOCKS);
       progress = {
         date: today,
         stocks,

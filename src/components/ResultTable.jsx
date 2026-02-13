@@ -6,6 +6,18 @@ function colorDev(d) {
   return '#cbd5e1';
 }
 
+function renderDev(val, touch) {
+  if (val == null) return '-';
+  const label = touch === 'H' ? '高' : '低';
+  const labelColor = touch === 'H' ? '#94a3b8' : '#64748b';
+  return (
+    <span className="num">
+      <span style={{ color: colorDev(val) }}>{val > 0 ? '+' : ''}{val}%</span>
+      <span style={{ color: labelColor, fontSize: 10, marginLeft: 2 }}>{label}</span>
+    </span>
+  );
+}
+
 const columns = [
   {
     title: '代码',
@@ -77,28 +89,12 @@ const columns = [
     render: v => <span className="num">{v}</span>,
   },
   {
-    title: '短期偏离(低)',
+    title: '短期偏离',
     dataIndex: 'deviationShort',
     width: 100,
     align: 'right',
     sorter: (a, b) => a.deviationShort - b.deviationShort,
-    render: v => (
-      <span className="num" style={{ color: colorDev(v) }}>
-        {v > 0 ? '+' : ''}{v}%
-      </span>
-    ),
-  },
-  {
-    title: '短期偏离(高)',
-    dataIndex: 'deviationShortHigh',
-    width: 100,
-    align: 'right',
-    sorter: (a, b) => (a.deviationShortHigh ?? 0) - (b.deviationShortHigh ?? 0),
-    render: v => v != null ? (
-      <span className="num" style={{ color: colorDev(v) }}>
-        {v > 0 ? '+' : ''}{v}%
-      </span>
-    ) : '-',
+    render: (v, r) => renderDev(v, r.touchShort),
   },
   {
     title: '多空线',
@@ -108,28 +104,12 @@ const columns = [
     render: v => <span className="num">{v}</span>,
   },
   {
-    title: '多空偏离(低)',
+    title: '多空偏离',
     dataIndex: 'deviationBull',
     width: 100,
     align: 'right',
     sorter: (a, b) => a.deviationBull - b.deviationBull,
-    render: v => (
-      <span className="num" style={{ color: colorDev(v) }}>
-        {v > 0 ? '+' : ''}{v}%
-      </span>
-    ),
-  },
-  {
-    title: '多空偏离(高)',
-    dataIndex: 'deviationBullHigh',
-    width: 100,
-    align: 'right',
-    sorter: (a, b) => (a.deviationBullHigh ?? 0) - (b.deviationBullHigh ?? 0),
-    render: v => v != null ? (
-      <span className="num" style={{ color: colorDev(v) }}>
-        {v > 0 ? '+' : ''}{v}%
-      </span>
-    ) : '-',
+    render: (v, r) => renderDev(v, r.touchBull),
   },
   {
     title: 'J 值',

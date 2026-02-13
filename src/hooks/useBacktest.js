@@ -6,9 +6,6 @@ const DEFAULTS = { klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoar
 export default function useBacktest() {
   const [params, setParams] = useState(DEFAULTS);
   const [date, setDate] = useState(null);
-  const [backtestIndustries, setBacktestIndustries] = useState([]);
-  const [backtestConcepts, setBacktestConcepts] = useState([]);
-  const [backtestCodes, setBacktestCodes] = useState([]);
   const [results, setResults] = useState([]);
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -31,7 +28,7 @@ export default function useBacktest() {
     }
   }, []);
 
-  const startBacktest = useCallback(async (d, klt, industries, concepts, codes, reset) => {
+  const startBacktest = useCallback(async (d, klt, reset) => {
     if (!d) return;
     setScanning(true);
     setScanInfo(null);
@@ -42,7 +39,7 @@ export default function useBacktest() {
 
     const poll = async () => {
       try {
-        const res = await triggerBacktest({ date: d, klt, industries, concepts, codes, reset });
+        const res = await triggerBacktest({ date: d, klt, reset });
         setScanInfo(res);
 
         // 后端可能调整了日期（周线自动对齐到周五）
@@ -81,9 +78,6 @@ export default function useBacktest() {
   return {
     params, setParams,
     date, setDate,
-    backtestIndustries, setBacktestIndustries,
-    backtestConcepts, setBacktestConcepts,
-    backtestCodes, setBacktestCodes,
     results, meta, loading,
     scanning, scanInfo,
     startBacktest, refresh, cleanup,

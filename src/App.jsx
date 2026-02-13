@@ -69,12 +69,6 @@ export default function App() {
           setParams={backtest.setParams}
           date={backtest.date}
           setDate={backtest.setDate}
-          backtestIndustries={backtest.backtestIndustries}
-          setBacktestIndustries={backtest.setBacktestIndustries}
-          backtestConcepts={backtest.backtestConcepts}
-          setBacktestConcepts={backtest.setBacktestConcepts}
-          backtestCodes={backtest.backtestCodes}
-          setBacktestCodes={backtest.setBacktestCodes}
           results={backtest.results}
           meta={backtest.meta}
           loading={backtest.loading}

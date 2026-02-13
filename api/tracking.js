@@ -127,17 +127,16 @@ export default async function handler(req, res) {
     const userFiltered = tracked.filter(t => {
       const r = t.latest;
       if (r.j >= j) return false;
+      if (r.close < r.bullBear * (1 - tolerance / 100)) return false;
       if (excludeBoards.length && excludeBoards.includes(r.board)) return false;
       if (industries.length && !industries.includes(r.industry)) return false;
       if (concepts.length) {
         const rc = r.concepts || [];
         if (!concepts.some(c => rc.includes(c))) return false;
       }
-      const nearShortLow = Math.abs(r.deviationShort) <= tolerance;
-      const nearBullLow = Math.abs(r.deviationBull) <= tolerance;
-      const nearShortHigh = Math.abs(r.deviationShortHigh ?? Infinity) <= tolerance;
-      const nearBullHigh = Math.abs(r.deviationBullHigh ?? Infinity) <= tolerance;
-      return nearShortLow || nearBullLow || nearShortHigh || nearBullHigh;
+      const nearShort = Math.abs(r.deviationShort) <= tolerance;
+      const nearBull = Math.abs(r.deviationBull) <= tolerance;
+      return nearShort || nearBull;
     });
 
     // 按 consecutiveDays 降序，同天数按 J 值升序

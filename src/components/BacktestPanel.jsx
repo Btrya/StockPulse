@@ -1,7 +1,5 @@
-import { useState, useRef } from 'react';
 import { DatePicker, Select, InputNumber, Radio, Button, Space, Card, Checkbox, Progress } from 'antd';
 import { ExperimentOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
-import { searchStocks } from '../lib/api';
 import dayjs from 'dayjs';
 
 const KLT_OPTIONS = [
@@ -18,38 +16,12 @@ const BOARD_OPTIONS = [
 export default function BacktestPanel({
   params, setParams,
   date, setDate,
-  backtestIndustries, setBacktestIndustries,
-  backtestConcepts, setBacktestConcepts,
-  backtestCodes, setBacktestCodes,
-  scopeIndustries, scopeConcepts,
   resultIndustries, resultConcepts,
   onStartBacktest, onSearch,
   scanning, scanInfo, loading, hasResults,
 }) {
   const update = (key, val) => setParams(prev => ({ ...prev, [key]: val }));
 
-  const [stockOptions, setStockOptions] = useState([]);
-  const [stockSearching, setStockSearching] = useState(false);
-  const searchTimer = useRef(null);
-
-  const handleStockSearch = (val) => {
-    if (searchTimer.current) clearTimeout(searchTimer.current);
-    if (!val.trim()) { setStockOptions([]); return; }
-    setStockSearching(true);
-    searchTimer.current = setTimeout(async () => {
-      try {
-        const res = await searchStocks(val.trim());
-        setStockOptions((res.data || []).map(s => ({
-          label: `${s.code} ${s.name} (${s.industry})`,
-          value: s.code,
-        })));
-      } catch { setStockOptions([]); }
-      setStockSearching(false);
-    }, 300);
-  };
-
-  const scopeIndustryOpts = (scopeIndustries || []).map(i => ({ label: i, value: i }));
-  const scopeConceptOpts = (scopeConcepts || []).map(c => ({ label: c, value: c }));
   const resultIndustryOpts = (resultIndustries || []).map(i => ({ label: i, value: i }));
   const resultConceptOpts = (resultConcepts || []).map(c => ({ label: c, value: c }));
 
@@ -58,8 +30,8 @@ export default function BacktestPanel({
   return (
     <Card size="small" className="mb-4" styles={{ body: { padding: '16px' } }}>
       <div className="flex flex-col gap-4">
-        {/* 第一行：日期 + 回测范围 */}
-        <div className="flex flex-col md:flex-row gap-4">
+        {/* 第一行：日期 + K线 + 回测按钮 */}
+        <div className="flex flex-col md:flex-row gap-4 items-start md:items-end">
           <div className="flex flex-col gap-1">
             <span className="text-xs text-slate-400">回测日期</span>
             <DatePicker
@@ -81,60 +53,6 @@ export default function BacktestPanel({
               size="middle"
             />
           </div>
-          <div className="flex flex-col gap-1 flex-1">
-            <span className="text-xs text-slate-400">回测行业范围（缩小扫描范围）</span>
-            <Select
-              mode="multiple"
-              showSearch
-              placeholder="留空=全部行业（耗时较长）"
-              optionFilterProp="label"
-              options={scopeIndustryOpts}
-              value={backtestIndustries}
-              onChange={setBacktestIndustries}
-              maxTagCount="responsive"
-              style={{ width: '100%' }}
-              allowClear
-            />
-          </div>
-          <div className="flex flex-col gap-1 flex-1">
-            <span className="text-xs text-slate-400">回测概念范围</span>
-            <Select
-              mode="multiple"
-              showSearch
-              placeholder="留空=全部概念"
-              optionFilterProp="label"
-              options={scopeConceptOpts}
-              value={backtestConcepts}
-              onChange={setBacktestConcepts}
-              maxTagCount="responsive"
-              style={{ width: '100%' }}
-              allowClear
-            />
-          </div>
-        </div>
-
-        {/* 第二行：指定股票 */}
-        <div className="flex flex-col gap-1">
-          <span className="text-xs text-slate-400">指定股票（可选，输入代码或名称搜索，填写后忽略行业/概念范围）</span>
-          <Select
-            mode="multiple"
-            showSearch
-            placeholder="输入代码或名称搜索，如 000001 或 平安银行"
-            value={backtestCodes}
-            onChange={setBacktestCodes}
-            onSearch={handleStockSearch}
-            options={stockOptions}
-            filterOption={false}
-            loading={stockSearching}
-            maxTagCount="responsive"
-            style={{ width: '100%' }}
-            allowClear
-            notFoundContent={stockSearching ? '搜索中...' : null}
-          />
-        </div>
-
-        {/* 回测按钮 + 进度 */}
-        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
           <Button
             type="primary"
             icon={<ExperimentOutlined />}
@@ -160,7 +78,7 @@ export default function BacktestPanel({
         {hasResults && (
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-end flex-wrap border-t border-slate-700 pt-4">
             <div className="flex flex-col gap-1 flex-1">
-              <span className="text-xs text-slate-400">结果行业筛选</span>
+              <span className="text-xs text-slate-400">行业筛选</span>
               <Select
                 mode="multiple"
                 showSearch
@@ -175,7 +93,7 @@ export default function BacktestPanel({
               />
             </div>
             <div className="flex flex-col gap-1 flex-1">
-              <span className="text-xs text-slate-400">结果概念筛选</span>
+              <span className="text-xs text-slate-400">概念筛选</span>
               <Select
                 mode="multiple"
                 showSearch

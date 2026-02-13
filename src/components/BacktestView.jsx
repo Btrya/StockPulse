@@ -7,9 +7,6 @@ import ResultCard from './ResultCard';
 export default function BacktestView({
   params, setParams,
   date, setDate,
-  backtestIndustries, setBacktestIndustries,
-  backtestConcepts, setBacktestConcepts,
-  backtestCodes, setBacktestCodes,
   results, meta, loading,
   scanning, scanInfo,
   startBacktest, refresh, cleanup,
@@ -18,15 +15,12 @@ export default function BacktestView({
   useEffect(() => cleanup, [cleanup]);
 
   const handleStartBacktest = () => {
-    startBacktest(date, params.klt, backtestIndustries, backtestConcepts, backtestCodes, false);
+    startBacktest(date, params.klt, false);
   };
 
-  // 范围选择器：用 screener 共享的全量行业/概念列表（回测前就需要）
-  const scopeIndustries = sharedIndustries || [];
-  const scopeConcepts = sharedConcepts || [];
   // 结果筛选器：用回测结果的行业/概念列表，fallback 到共享列表
-  const resultIndustries = meta?.industries?.length ? meta.industries : scopeIndustries;
-  const resultConcepts = meta?.concepts?.length ? meta.concepts : scopeConcepts;
+  const resultIndustries = meta?.industries?.length ? meta.industries : (sharedIndustries || []);
+  const resultConcepts = meta?.concepts?.length ? meta.concepts : (sharedConcepts || []);
 
   return (
     <div>
@@ -35,14 +29,6 @@ export default function BacktestView({
         setParams={setParams}
         date={date}
         setDate={setDate}
-        backtestIndustries={backtestIndustries}
-        setBacktestIndustries={setBacktestIndustries}
-        backtestConcepts={backtestConcepts}
-        setBacktestConcepts={setBacktestConcepts}
-        backtestCodes={backtestCodes}
-        setBacktestCodes={setBacktestCodes}
-        scopeIndustries={scopeIndustries}
-        scopeConcepts={scopeConcepts}
         resultIndustries={resultIndustries}
         resultConcepts={resultConcepts}
         onStartBacktest={handleStartBacktest}
@@ -71,7 +57,7 @@ export default function BacktestView({
             <div className="flex items-center justify-between mb-3 text-xs text-slate-400">
               <span>
                 共 {meta.total} 只符合条件
-                {meta.wideTotal ? ` (宽阈值 ${meta.wideTotal} 只)` : ''}
+                {meta.wideTotal ? ` (全量 ${meta.wideTotal} 只)` : ''}
               </span>
               {meta.scanDate && <span>回测日期: {meta.scanDate}</span>}
             </div>

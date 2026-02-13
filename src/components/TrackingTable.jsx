@@ -18,6 +18,17 @@ function directionLabel(dir) {
   return { text: '持平', color: '#cbd5e1', arrow: '\u2192' };
 }
 
+function renderDev(val, touch) {
+  if (val == null) return '-';
+  const label = touch === 'H' ? '高' : '低';
+  return (
+    <span className="num">
+      <span style={{ color: colorDev(val) }}>{val > 0 ? '+' : ''}{val}%</span>
+      <span style={{ color: '#94a3b8', fontSize: 10, marginLeft: 2 }}>{label}</span>
+    </span>
+  );
+}
+
 const columns = [
   {
     title: '代码',
@@ -93,48 +104,18 @@ const columns = [
     render: v => <span className="num">{v}</span>,
   },
   {
-    title: '短期偏离(低)',
+    title: '短期偏离',
     dataIndex: ['latest', 'deviationShort'],
     width: 100,
     align: 'right',
-    render: v => (
-      <span className="num" style={{ color: colorDev(v) }}>
-        {v > 0 ? '+' : ''}{v}%
-      </span>
-    ),
+    render: (v, r) => renderDev(v, r.latest?.touchShort),
   },
   {
-    title: '短期偏离(高)',
-    dataIndex: ['latest', 'deviationShortHigh'],
-    width: 100,
-    align: 'right',
-    render: v => v != null ? (
-      <span className="num" style={{ color: colorDev(v) }}>
-        {v > 0 ? '+' : ''}{v}%
-      </span>
-    ) : '-',
-  },
-  {
-    title: '多空偏离(低)',
+    title: '多空偏离',
     dataIndex: ['latest', 'deviationBull'],
     width: 100,
     align: 'right',
-    render: v => (
-      <span className="num" style={{ color: colorDev(v) }}>
-        {v > 0 ? '+' : ''}{v}%
-      </span>
-    ),
-  },
-  {
-    title: '多空偏离(高)',
-    dataIndex: ['latest', 'deviationBullHigh'],
-    width: 100,
-    align: 'right',
-    render: v => v != null ? (
-      <span className="num" style={{ color: colorDev(v) }}>
-        {v > 0 ? '+' : ''}{v}%
-      </span>
-    ) : '-',
+    render: (v, r) => renderDev(v, r.latest?.touchBull),
   },
 ];
 

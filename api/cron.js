@@ -33,6 +33,7 @@ export default async function handler(req, res) {
       if (stale) {
         stocks = await getStockList();
         stocks = stocks.filter(s => !s.name.includes('ST') && !s.name.includes('退'));
+        await redis.set(KEY.STOCKS, stocks, TTL.STOCKS);
         progress = { date: today, stocks, idx: 0, dailyHits: [], weeklyHits: [], startedAt: now.toISOString() };
         await redis.set(KEY.PROGRESS, progress, TTL.PROGRESS);
       } else {
@@ -42,6 +43,8 @@ export default async function handler(req, res) {
       stocks = await getStockList();
       // 过滤 ST 和 退市
       stocks = stocks.filter(s => !s.name.includes('ST') && !s.name.includes('退'));
+      // 写入 stocks:list 供查询 tab 使用
+      await redis.set(KEY.STOCKS, stocks, TTL.STOCKS);
       progress = { date: today, stocks, idx: 0, dailyHits: [], weeklyHits: [], startedAt: new Date().toISOString() };
       await redis.set(KEY.PROGRESS, progress, TTL.PROGRESS);
     }
