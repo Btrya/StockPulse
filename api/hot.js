@@ -18,9 +18,9 @@ export default async function handler(req, res) {
 
     // 并行请求三类热榜
     const [hotStocksRaw, hotIndustriesRaw, hotConceptsRaw] = await Promise.all([
-      getThsHot(cnDate, 'A').catch(() => []),
-      getThsHot(cnDate, 'HY').catch(() => []),
-      getThsHot(cnDate, 'GN').catch(() => []),
+      getThsHot(cnDate, '热股').catch(() => []),
+      getThsHot(cnDate, '行业板块').catch(() => []),
+      getThsHot(cnDate, '概念板块').catch(() => []),
     ]);
 
     // 如果全空（可能非交易日），往前探 5 天
@@ -32,9 +32,9 @@ export default async function handler(req, res) {
       for (let i = 1; i <= 5; i++) {
         const d = getCNDate(new Date(now.getTime() - i * 86400000)).replace(/-/g, '');
         const [s, ind, c] = await Promise.all([
-          getThsHot(d, 'A').catch(() => []),
-          getThsHot(d, 'HY').catch(() => []),
-          getThsHot(d, 'GN').catch(() => []),
+          getThsHot(d, '热股').catch(() => []),
+          getThsHot(d, '行业板块').catch(() => []),
+          getThsHot(d, '概念板块').catch(() => []),
         ]);
         if (s.length || ind.length || c.length) {
           hotStocks = s;
