@@ -1,7 +1,7 @@
 import { getStockList, batchGetKlines } from './_lib/tushare.js';
 import { screenStock } from './_lib/screener.js';
 import * as redis from './_lib/redis.js';
-import { KEY, TTL } from './_lib/constants.js';
+import { KEY, TTL, getCNDate } from './_lib/constants.js';
 
 const TIMEOUT_MS = 50000;
 
@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   }
 
   const startTime = Date.now();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getCNDate();
 
   try {
     if (!redis.isConfigured()) {

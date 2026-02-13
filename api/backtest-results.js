@@ -2,16 +2,26 @@ import * as redis from './_lib/redis.js';
 import { KEY, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS } from './_lib/constants.js';
 import { filterResults } from './_lib/screener.js';
 
+// 与 backtest.js 保持一致
+function snapToFriday(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00Z');
+  const day = d.getUTCDay();
+  const diff = day === 0 ? -2 : day === 6 ? -1 : 5 - day;
+  d.setUTCDate(d.getUTCDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+
 export default async function handler(req, res) {
   try {
-    const date = req.query.date;
-    if (!date) {
+    const rawDate = req.query.date;
+    if (!rawDate) {
       return res.status(400).json({ error: '缺少 date 参数' });
     }
 
     const j = Number(req.query.j ?? DEFAULT_J);
     const tolerance = Number(req.query.tolerance ?? DEFAULT_TOLERANCE);
     const klt = req.query.klt || DEFAULT_KLT;
+    const date = klt === 'weekly' ? snapToFriday(rawDate) : rawDate;
     const sort = req.query.sort || 'j';
     const order = req.query.order || 'asc';
     const industries = req.query.industries ? req.query.industries.split(',').filter(Boolean) : [];

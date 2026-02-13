@@ -38,17 +38,25 @@ export default function useBacktest() {
     setResults([]);
     setMeta(null);
 
+    let effectiveDate = d;
+
     const poll = async () => {
       try {
         const res = await triggerBacktest({ date: d, klt, industries, concepts, codes, reset });
         setScanInfo(res);
+
+        // 后端可能调整了日期（周线自动对齐到周五）
+        if (res.adjustedDate) {
+          effectiveDate = res.adjustedDate;
+          setDate(effectiveDate);
+        }
 
         if (res.needContinue) {
           timerRef.current = setTimeout(poll, 500);
         } else {
           setScanning(false);
           setScanInfo(null);
-          queryResults(d, { klt, j: params.j, tolerance: params.tolerance, industries: params.industries, excludeBoards: params.excludeBoards, concepts: params.concepts });
+          queryResults(effectiveDate, { klt, j: params.j, tolerance: params.tolerance, industries: params.industries, excludeBoards: params.excludeBoards, concepts: params.concepts });
         }
       } catch (err) {
         console.error('Backtest failed:', err);

@@ -5,6 +5,15 @@ import { KEY, TTL } from './_lib/constants.js';
 
 const TIMEOUT_MS = 50000;
 
+// 将日期调整到该周的周五（周线数据以周五为基准）
+function snapToFriday(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00Z');
+  const day = d.getUTCDay(); // 0=Sun, 5=Fri, 6=Sat
+  const diff = day === 0 ? -2 : day === 6 ? -1 : 5 - day;
+  d.setUTCDate(d.getUTCDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+
 // 比较两个排序后的数组是否相等
 function arrEq(a, b) {
   const sa = (a || []).slice().sort();
@@ -25,11 +34,14 @@ export default async function handler(req, res) {
 
   const startTime = Date.now();
   const body = req.body || {};
-  const { date, klt = 'daily', industries, concepts, codes, reset } = body;
+  const { date: rawDate, klt = 'daily', industries, concepts, codes, reset } = body;
 
-  if (!date) {
+  if (!rawDate) {
     return res.status(400).json({ error: '缺少 date 参数' });
   }
+
+  // 周线回测：自动调整到该周周五
+  const date = klt === 'weekly' ? snapToFriday(rawDate) : rawDate;
 
   try {
     if (!redis.isConfigured()) {
@@ -155,6 +167,7 @@ export default async function handler(req, res) {
       hits: hits.length,
       done,
       needContinue: !done,
+      adjustedDate: date !== rawDate ? date : undefined,
     });
   } catch (err) {
     console.error('backtest error:', err);

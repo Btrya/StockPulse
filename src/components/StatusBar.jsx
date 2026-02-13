@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Tag, Button, Tooltip, Space } from 'antd';
+import { Tag, Button, Tooltip, Space, message } from 'antd';
 import { SyncOutlined, CheckCircleOutlined, ThunderboltOutlined, StopOutlined } from '@ant-design/icons';
 import { fetchStatus, triggerScan } from '../lib/api';
 
@@ -44,6 +44,11 @@ export default function StatusBar({ klt }) {
     setScanning(true);
     setScanInfo(null);
     triggerScan({ klt }).then(res => {
+      if (res.blocked) {
+        message.warning(res.error || '市场尚未收盘');
+        setScanning(false);
+        return;
+      }
       setScanInfo(res);
       if (res.needContinue) {
         timerRef.current = setTimeout(continueScan, 500);

@@ -52,3 +52,22 @@ export function getMarketBoard(code) {
   }
   return 'other';
 }
+
+// 获取北京时间当天日期 YYYY-MM-DD
+export function getCNDate(now = new Date()) {
+  return new Date(now.getTime() + 8 * 3600000).toISOString().slice(0, 10);
+}
+
+// 判断当前时刻 A 股是否已收盘（15:00 CST = 07:00 UTC）
+export function isMarketClosed(now = new Date()) {
+  const utcH = now.getUTCHours();
+  const utcM = now.getUTCMinutes();
+  return utcH > 7 || (utcH === 7 && utcM >= 0);
+}
+
+// 判断北京时间某天是否为周末
+export function isWeekend(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00+08:00');
+  const day = d.getDay();
+  return day === 0 || day === 6;
+}

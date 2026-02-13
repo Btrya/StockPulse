@@ -1,5 +1,5 @@
 import * as redis from './_lib/redis.js';
-import { KEY, TTL, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS } from './_lib/constants.js';
+import { KEY, TTL, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS, getCNDate, isMarketClosed } from './_lib/constants.js';
 import { filterResults } from './_lib/screener.js';
 
 // 获取行业列表（优先 Redis 缓存，fallback Tushare）
@@ -45,14 +45,23 @@ export default async function handler(req, res) {
     let scanDate = null;
 
     if (redis.isConfigured()) {
-      const today = new Date().toISOString().slice(0, 10);
-      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+      const now = new Date();
+      const today = getCNDate(now);
+      const closed = isMarketClosed(now);
+
       try {
-        data = await redis.get(KEY.screenResult(today, klt));
-        scanDate = today;
+        if (closed) {
+          // 收盘后：优先今天，降级往前找
+          data = await redis.get(KEY.screenResult(today, klt));
+          scanDate = today;
+        }
         if (!data) {
-          data = await redis.get(KEY.screenResult(yesterday, klt));
-          scanDate = yesterday;
+          // 收盘前 or 今天没数据：往前找最近的交易日数据（跨周末/节假日）
+          for (let i = 1; i <= 5; i++) {
+            const d = getCNDate(new Date(now.getTime() - i * 86400000));
+            data = await redis.get(KEY.screenResult(d, klt));
+            if (data) { scanDate = d; break; }
+          }
         }
       } catch (redisErr) {
         console.error('Redis read failed:', redisErr.message);
