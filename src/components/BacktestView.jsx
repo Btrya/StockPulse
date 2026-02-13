@@ -9,6 +9,7 @@ export default function BacktestView({
   date, setDate,
   backtestIndustries, setBacktestIndustries,
   backtestConcepts, setBacktestConcepts,
+  backtestCodes, setBacktestCodes,
   results, meta, loading,
   scanning, scanInfo,
   startBacktest, refresh, cleanup,
@@ -17,7 +18,7 @@ export default function BacktestView({
   useEffect(() => cleanup, [cleanup]);
 
   const handleStartBacktest = () => {
-    startBacktest(date, params.klt, backtestIndustries, backtestConcepts, false);
+    startBacktest(date, params.klt, backtestIndustries, backtestConcepts, backtestCodes, false);
   };
 
   // 范围选择器：用 screener 共享的全量行业/概念列表（回测前就需要）
@@ -38,6 +39,8 @@ export default function BacktestView({
         setBacktestIndustries={setBacktestIndustries}
         backtestConcepts={backtestConcepts}
         setBacktestConcepts={setBacktestConcepts}
+        backtestCodes={backtestCodes}
+        setBacktestCodes={setBacktestCodes}
         scopeIndustries={scopeIndustries}
         scopeConcepts={scopeConcepts}
         resultIndustries={resultIndustries}

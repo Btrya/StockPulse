@@ -8,6 +8,7 @@ export default function useBacktest() {
   const [date, setDate] = useState(null);
   const [backtestIndustries, setBacktestIndustries] = useState([]);
   const [backtestConcepts, setBacktestConcepts] = useState([]);
+  const [backtestCodes, setBacktestCodes] = useState([]);
   const [results, setResults] = useState([]);
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -30,7 +31,7 @@ export default function useBacktest() {
     }
   }, []);
 
-  const startBacktest = useCallback(async (d, klt, industries, concepts, reset) => {
+  const startBacktest = useCallback(async (d, klt, industries, concepts, codes, reset) => {
     if (!d) return;
     setScanning(true);
     setScanInfo(null);
@@ -39,7 +40,7 @@ export default function useBacktest() {
 
     const poll = async () => {
       try {
-        const res = await triggerBacktest({ date: d, klt, industries, concepts, reset });
+        const res = await triggerBacktest({ date: d, klt, industries, concepts, codes, reset });
         setScanInfo(res);
 
         if (res.needContinue) {
@@ -74,6 +75,7 @@ export default function useBacktest() {
     date, setDate,
     backtestIndustries, setBacktestIndustries,
     backtestConcepts, setBacktestConcepts,
+    backtestCodes, setBacktestCodes,
     results, meta, loading,
     scanning, scanInfo,
     startBacktest, refresh, cleanup,

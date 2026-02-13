@@ -18,6 +18,7 @@ export default function BacktestPanel({
   date, setDate,
   backtestIndustries, setBacktestIndustries,
   backtestConcepts, setBacktestConcepts,
+  backtestCodes, setBacktestCodes,
   scopeIndustries, scopeConcepts,
   resultIndustries, resultConcepts,
   onStartBacktest, onSearch,
@@ -88,6 +89,22 @@ export default function BacktestPanel({
               allowClear
             />
           </div>
+        </div>
+
+        {/* 第二行：指定股票代码 */}
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-slate-400">指定股票代码（可选，填写后忽略行业/概念范围）</span>
+          <Select
+            mode="tags"
+            placeholder="输入代码回车添加，如 000001、600519"
+            value={backtestCodes}
+            onChange={setBacktestCodes}
+            maxTagCount="responsive"
+            style={{ width: '100%' }}
+            allowClear
+            tokenSeparators={[',', ' ', '\u3001', '\uff0c']}
+            notFoundContent={null}
+          />
         </div>
 
         {/* 回测按钮 + 进度 */}

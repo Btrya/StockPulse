@@ -72,6 +72,8 @@ export default function App() {
           setBacktestIndustries={backtest.setBacktestIndustries}
           backtestConcepts={backtest.backtestConcepts}
           setBacktestConcepts={backtest.setBacktestConcepts}
+          backtestCodes={backtest.backtestCodes}
+          setBacktestCodes={backtest.setBacktestCodes}
           results={backtest.results}
           meta={backtest.meta}
           loading={backtest.loading}
