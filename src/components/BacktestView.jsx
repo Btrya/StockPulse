@@ -45,11 +45,6 @@ export default function BacktestView({
           <Spin size="large" />
           <p className="mt-4 text-slate-400">正在加载回测结果...</p>
         </div>
-      ) : scanning ? (
-        <div className="text-center py-16">
-          <Spin size="large" />
-          <p className="mt-4 text-slate-400">回测扫描中，请稍候...</p>
-        </div>
       ) : meta?.error ? (
         <Alert type="error" message="查询失败" description={meta.error} showIcon className="mb-4" />
       ) : results.length > 0 ? (
@@ -73,6 +68,11 @@ export default function BacktestView({
               <ResultCard key={item.code} item={item} hotData={hotData} />
             ))}
           </div>
+        </div>
+      ) : scanning ? (
+        <div className="text-center py-16">
+          <Spin size="large" />
+          <p className="mt-4 text-slate-400">回测扫描中，等待中间结果...</p>
         </div>
       ) : date ? (
         <Empty

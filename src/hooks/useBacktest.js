@@ -48,12 +48,20 @@ export default function useBacktest() {
           setDate(effectiveDate);
         }
 
+        // 每轮 poll 后静默获取中间结果，实时渲染已筛出数据
+        try {
+          const mid = await fetchBacktestResults({ date: effectiveDate, klt, j: params.j, tolerance: params.tolerance, industries: params.industries, excludeBoards: params.excludeBoards, concepts: params.concepts });
+          if (mid.data?.length) {
+            setResults(mid.data);
+            setMeta(mid.meta || null);
+          }
+        } catch { /* ignore intermediate fetch errors */ }
+
         if (res.needContinue) {
           timerRef.current = setTimeout(poll, 500);
         } else {
           setScanning(false);
           setScanInfo(null);
-          queryResults(effectiveDate, { klt, j: params.j, tolerance: params.tolerance, industries: params.industries, excludeBoards: params.excludeBoards, concepts: params.concepts });
         }
       } catch (err) {
         console.error('Backtest failed:', err);

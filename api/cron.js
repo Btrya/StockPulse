@@ -72,7 +72,7 @@ export default async function handler(req, res) {
           ? await (await import('./_lib/tushare.js')).getWeekly(stock.ts_code, start)
           : await (await import('./_lib/tushare.js')).getDaily(stock.ts_code, start);
 
-        const result = screenStock({ ...stock, klines });
+        const result = screenStock({ ...stock, klines }, { noFilter: true });
         if (result) {
           result.concepts = conceptsMap?.[stock.ts_code] || [];
           hits.push(result);

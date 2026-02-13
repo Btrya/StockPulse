@@ -68,7 +68,7 @@ export default function BacktestPanel({
               <Progress
                 percent={pct}
                 size="small"
-                format={() => `${scanInfo.idx}/${scanInfo.total} (${scanInfo.hits || 0}命中)`}
+                format={() => `正在拉取数据 ${scanInfo.idx}/${scanInfo.total}`}
               />
             </div>
           )}

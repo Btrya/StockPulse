@@ -90,7 +90,7 @@ export default async function handler(req, res) {
       const stock = progress.stocks[idx];
       try {
         const klines = await fn(stock.ts_code, start);
-        const result = screenStock({ ...stock, klines });
+        const result = screenStock({ ...stock, klines }, { noFilter: true });
         if (result) {
           result.concepts = conceptsMap?.[stock.ts_code] || [];
           hits.push(result);

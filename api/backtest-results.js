@@ -32,7 +32,7 @@ export default async function handler(req, res) {
       return res.json({ data: [], meta: { error: 'Redis 未配置' } });
     }
 
-    const raw = await redis.get(KEY.backtestResult(date, klt));
+    const raw = await redis.get(KEY.screenResult(date, klt));
     // 兼容新格式 { hits, scope } 和旧格式（纯数组）
     const data = Array.isArray(raw) ? raw : (raw?.hits || null);
 
