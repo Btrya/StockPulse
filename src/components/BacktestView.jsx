@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Spin, Empty, Alert } from 'antd';
 import BacktestPanel from './BacktestPanel';
 import ResultTable from './ResultTable';
@@ -14,10 +14,20 @@ export default function BacktestView({
   hotData,
 }) {
   useEffect(() => cleanup, [cleanup]);
+  const [stockFilter, setStockFilter] = useState('');
 
   const handleStartBacktest = () => {
     startBacktest(date, params.klt, false);
   };
+
+  // 本地按代码/名称过滤
+  const displayResults = useMemo(() => {
+    if (!stockFilter.trim()) return results;
+    const q = stockFilter.trim().toLowerCase();
+    return results.filter(r =>
+      r.code?.toLowerCase().includes(q) || r.name?.toLowerCase().includes(q)
+    );
+  }, [results, stockFilter]);
 
   // 结果筛选器：用回测结果的行业/概念列表，fallback 到共享列表
   const resultIndustries = meta?.industries?.length ? meta.industries : (sharedIndustries || []);
@@ -38,6 +48,8 @@ export default function BacktestView({
         scanInfo={scanInfo}
         loading={loading}
         hasResults={results.length > 0}
+        stockFilter={stockFilter}
+        onStockFilterChange={setStockFilter}
       />
 
       {loading ? (
@@ -54,17 +66,18 @@ export default function BacktestView({
               <span>
                 共 {meta.total} 只符合条件
                 {meta.wideTotal ? ` (全量 ${meta.wideTotal} 只)` : ''}
+                {stockFilter.trim() ? ` → 搜索到 ${displayResults.length} 只` : ''}
               </span>
               {meta.scanDate && <span>回测日期: {meta.scanDate}</span>}
             </div>
           )}
 
           <div className="hidden md:block">
-            <ResultTable data={results} hotData={hotData} />
+            <ResultTable data={displayResults} hotData={hotData} />
           </div>
 
           <div className="md:hidden flex flex-col gap-3">
-            {results.map(item => (
+            {displayResults.map(item => (
               <ResultCard key={item.code} item={item} hotData={hotData} />
             ))}
           </div>

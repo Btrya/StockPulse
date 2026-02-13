@@ -1,4 +1,4 @@
-import { DatePicker, Select, InputNumber, Radio, Button, Space, Card, Checkbox, Progress } from 'antd';
+import { DatePicker, Select, InputNumber, Input, Radio, Button, Space, Card, Checkbox, Progress } from 'antd';
 import { ExperimentOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
@@ -19,6 +19,7 @@ export default function BacktestPanel({
   resultIndustries, resultConcepts,
   onStartBacktest, onSearch,
   scanning, scanInfo, loading, hasResults,
+  stockFilter, onStockFilterChange,
 }) {
   const update = (key, val) => setParams(prev => ({ ...prev, [key]: val }));
 
@@ -77,6 +78,16 @@ export default function BacktestPanel({
         {/* 结果筛选参数（有结果时才展示） */}
         {hasResults && (
           <div className="flex flex-col md:flex-row gap-4 items-start md:items-end flex-wrap border-t border-slate-700 pt-4">
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">搜索股票</span>
+              <Input
+                placeholder="代码或名称"
+                value={stockFilter}
+                onChange={e => onStockFilterChange(e.target.value)}
+                allowClear
+                style={{ width: 140 }}
+              />
+            </div>
             <div className="flex flex-col gap-1 flex-1">
               <span className="text-xs text-slate-400">行业筛选</span>
               <Select
