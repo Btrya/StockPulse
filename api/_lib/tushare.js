@@ -53,11 +53,35 @@ export async function getDaily(tsCode, startDate) {
   return rows;
 }
 
+// 获取日线行情（指定日期范围）
+export async function getDailyRange(tsCode, startDate, endDate) {
+  const data = await tushareRequest('daily', {
+    ts_code: tsCode,
+    start_date: startDate,
+    end_date: endDate,
+  }, 'trade_date,open,high,low,close,vol');
+  const rows = parseData(data);
+  rows.reverse();
+  return rows;
+}
+
 // 获取周线行情
 export async function getWeekly(tsCode, startDate) {
   const data = await tushareRequest('weekly', {
     ts_code: tsCode,
     start_date: startDate,
+  }, 'trade_date,open,high,low,close,vol');
+  const rows = parseData(data);
+  rows.reverse();
+  return rows;
+}
+
+// 获取周线行情（指定日期范围）
+export async function getWeeklyRange(tsCode, startDate, endDate) {
+  const data = await tushareRequest('weekly', {
+    ts_code: tsCode,
+    start_date: startDate,
+    end_date: endDate,
   }, 'trade_date,open,high,low,close,vol');
   const rows = parseData(data);
   rows.reverse();

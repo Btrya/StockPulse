@@ -76,7 +76,8 @@ export default async function handler(req, res) {
         progress.currentKlt = klt;
         await redis.set(KEY.PROGRESS, progress, TTL.PROGRESS);
         // 中间结果也写到 screenResult，这样前端刷新能看到部分数据
-        await redis.set(KEY.screenResult(today, klt), hits, TTL.SCREEN_RESULT);
+        const screenTTL = klt === 'daily' ? TTL.SCREEN_RESULT_DAILY : TTL.SCREEN_RESULT_WEEKLY;
+        await redis.set(KEY.screenResult(today, klt), hits, screenTTL);
       }
 
       await new Promise(r => setTimeout(r, 150));
@@ -91,7 +92,15 @@ export default async function handler(req, res) {
     const done = idx >= progress.stocks.length;
 
     if (done) {
-      await redis.set(KEY.screenResult(today, klt), hits, TTL.SCREEN_RESULT);
+      const screenTTL = klt === 'daily' ? TTL.SCREEN_RESULT_DAILY : TTL.SCREEN_RESULT_WEEKLY;
+      await redis.set(KEY.screenResult(today, klt), hits, screenTTL);
+
+      // 追加日期到 scan:dates
+      const maxLen = klt === 'daily' ? 10 : 8;
+      const dates = (await redis.get(KEY.scanDates(klt))) || [];
+      if (dates[0] !== today) dates.unshift(today);
+      if (dates.length > maxLen) dates.length = maxLen;
+      await redis.set(KEY.scanDates(klt), dates, screenTTL);
 
       if (klt === 'daily') {
         progress.currentKlt = 'weekly';

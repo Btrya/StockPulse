@@ -18,15 +18,24 @@ export const KEY = {
   PROGRESS: 'scan:progress',
   CONCEPTS_MAP: 'concepts:map',
   CONCEPTS_META: 'concepts:meta',
+  scanDates: (klt) => `scan:dates:${klt}`,
+  backtestResult: (date, klt) => `backtest:${date}:${klt}`,
+  BACKTEST_PROGRESS: 'backtest:progress',
 };
 
 // TTL (seconds)
 export const TTL = {
-  STOCKS: 86400,        // 24h
-  SCREEN_RESULT: 172800, // 48h
-  PROGRESS: 7200,        // 2h
-  CONCEPTS: 604800,      // 7d
+  STOCKS: 86400,              // 24h
+  SCREEN_RESULT_DAILY: 604800,  // 7d
+  SCREEN_RESULT_WEEKLY: 2592000, // 30d
+  PROGRESS: 7200,              // 2h
+  CONCEPTS: 604800,            // 7d
+  BACKTEST_RESULT: 172800,     // 48h
 };
+
+// 追踪窗口
+export const TRACKING_DAILY_WINDOW = 5;
+export const TRACKING_WEEKLY_WINDOW = 4;
 
 // 市场板块分类
 export const MARKET_BOARDS = [
