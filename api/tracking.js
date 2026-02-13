@@ -18,18 +18,20 @@ export default async function handler(req, res) {
 
     const window = klt === 'daily' ? TRACKING_DAILY_WINDOW : TRACKING_WEEKLY_WINDOW;
 
-    // 读取 scan:dates
+    // 读取 scan:dates，不足 window 条则探测 Redis key 补充
     let scanDates = await redis.get(KEY.scanDates(klt));
-
-    // Fallback: 如果 scan:dates 不存在，尝试最近 10 个自然日查 Redis key
-    if (!scanDates || !scanDates.length) {
-      scanDates = [];
-      for (let i = 0; i < 10; i++) {
+    if (!scanDates || scanDates.length < window) {
+      const existing = new Set(scanDates || []);
+      // 日线探 15 天（跨周末），周线探 40 天（跨月）
+      const probeRange = klt === 'weekly' ? 40 : 15;
+      for (let i = 0; i < probeRange; i++) {
         const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+        if (existing.has(d)) continue;
         const data = await redis.get(KEY.screenResult(d, klt));
-        if (data) scanDates.push(d);
-        if (scanDates.length >= window) break;
+        if (data) existing.add(d);
+        if (existing.size >= window) break;
       }
+      scanDates = [...existing].sort((a, b) => b.localeCompare(a));
     }
 
     if (!scanDates.length) {
