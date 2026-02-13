@@ -1,6 +1,7 @@
 import { DatePicker, Select, InputNumber, Input, Radio, Button, Space, Card, Checkbox, Progress } from 'antd';
 import { ExperimentOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
+import { buildHotOptions } from '../hooks/useHotData';
 
 const KLT_OPTIONS = [
   { label: '日线', value: 'daily' },
@@ -20,11 +21,12 @@ export default function BacktestPanel({
   onStartBacktest, onSearch,
   scanning, scanInfo, loading, hasResults,
   stockFilter, onStockFilterChange,
+  hotData,
 }) {
   const update = (key, val) => setParams(prev => ({ ...prev, [key]: val }));
 
-  const resultIndustryOpts = (resultIndustries || []).map(i => ({ label: i, value: i }));
-  const resultConceptOpts = (resultConcepts || []).map(c => ({ label: c, value: c }));
+  const resultIndustryOpts = buildHotOptions(resultIndustries, hotData?.hotIndustries);
+  const resultConceptOpts = buildHotOptions(resultConcepts, hotData?.hotConcepts);
 
   const pct = scanInfo?.total ? Math.round((scanInfo.idx / scanInfo.total) * 100) : 0;
 

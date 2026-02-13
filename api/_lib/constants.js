@@ -32,7 +32,7 @@ export const TTL = {
   PROGRESS: 7200,              // 2h
   CONCEPTS: 604800,            // 7d
   BACKTEST_RESULT: 172800,     // 48h
-  HOT_DATA: 300,               // 5min
+  HOT_DATA: 3600,               // 1h
 };
 
 // 追踪窗口

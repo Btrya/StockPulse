@@ -35,3 +35,17 @@ export function getHotReasons(stock, hotSets) {
   if (concepts.some(c => hotSets.concepts.has(c))) reasons.push('热门概念');
   return reasons;
 }
+
+// 生成带热门标记的 Select 选项，热门项排在前面按 rank 升序
+export function buildHotOptions(items, hotList) {
+  if (!items?.length) return [];
+  const hotMap = new Map();
+  if (hotList) {
+    for (const h of hotList) {
+      if (h.name && !hotMap.has(h.name)) hotMap.set(h.name, h.rank);
+    }
+  }
+  return items
+    .map(name => ({ label: hotMap.has(name) ? `🔥 ${name}` : name, value: name, rank: hotMap.get(name) ?? Infinity }))
+    .sort((a, b) => a.rank - b.rank);
+}

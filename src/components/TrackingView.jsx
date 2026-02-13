@@ -17,6 +17,7 @@ export default function TrackingView({ params, setParams, results, meta, loading
         concepts={panelConcepts}
         onSearch={refresh}
         loading={loading}
+        hotData={hotData}
       />
 
       {loading ? (

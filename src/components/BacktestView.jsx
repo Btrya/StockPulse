@@ -50,6 +50,7 @@ export default function BacktestView({
         hasResults={results.length > 0}
         stockFilter={stockFilter}
         onStockFilterChange={setStockFilter}
+        hotData={hotData}
       />
 
       {loading ? (

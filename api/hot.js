@@ -45,10 +45,22 @@ export default async function handler(req, res) {
       }
     }
 
+    // 去重：ths_hot 返回多个时间快照，按 ts_code/ts_name 去重保留最新（最高 hot 值）
+    const dedupe = (arr, keyFn) => {
+      const map = new Map();
+      for (const r of arr) {
+        const k = keyFn(r);
+        if (!k) continue;
+        const prev = map.get(k);
+        if (!prev || r.hot > prev.hot) map.set(k, r);
+      }
+      return [...map.values()].sort((a, b) => a.rank - b.rank);
+    };
+
     const data = {
-      hotStocks: hotStocks.map(r => ({ ts_code: r.ts_code, name: r.name, rank: r.rank, hot: r.hot })),
-      hotIndustries: hotIndustries.map(r => ({ name: r.name, rank: r.rank, hot: r.hot })),
-      hotConcepts: hotConcepts.map(r => ({ name: r.name, rank: r.rank, hot: r.hot })),
+      hotStocks: dedupe(hotStocks, r => r.ts_code).map(r => ({ ts_code: r.ts_code, name: r.ts_name, rank: r.rank, hot: r.hot })),
+      hotIndustries: dedupe(hotIndustries, r => r.ts_name).map(r => ({ name: r.ts_name, rank: r.rank, hot: r.hot })),
+      hotConcepts: dedupe(hotConcepts, r => r.ts_name).map(r => ({ name: r.ts_name, rank: r.rank, hot: r.hot })),
     };
 
     // 写缓存

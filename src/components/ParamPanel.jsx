@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Select, InputNumber, Radio, Button, Space, Card, Checkbox, message } from 'antd';
 import { SearchOutlined, ReloadOutlined, TagsOutlined } from '@ant-design/icons';
 import { buildConcepts } from '../lib/api';
+import { buildHotOptions } from '../hooks/useHotData';
 
 const KLT_OPTIONS = [
   { label: '日线', value: 'daily' },
@@ -14,7 +15,7 @@ const BOARD_OPTIONS = [
   { label: '北交所', value: 'bse' },
 ];
 
-export default function ParamPanel({ params, setParams, industries, concepts, onSearch, loading }) {
+export default function ParamPanel({ params, setParams, industries, concepts, onSearch, loading, hotData }) {
   const update = (key, val) => setParams(prev => ({ ...prev, [key]: val }));
   const [buildingConcepts, setBuildingConcepts] = useState(false);
 
@@ -34,8 +35,8 @@ export default function ParamPanel({ params, setParams, industries, concepts, on
     }
   };
 
-  const industryOptions = (industries || []).map(i => ({ label: i, value: i }));
-  const conceptOptions = (concepts || []).map(c => ({ label: c, value: c }));
+  const industryOptions = buildHotOptions(industries, hotData?.hotIndustries);
+  const conceptOptions = buildHotOptions(concepts, hotData?.hotConcepts);
 
   return (
     <Card size="small" className="mb-4" styles={{ body: { padding: '16px' } }}>

@@ -1,5 +1,6 @@
 import { Select, InputNumber, Radio, Button, Space, Card, Checkbox } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { buildHotOptions } from '../hooks/useHotData';
 
 const KLT_OPTIONS = [
   { label: '日线', value: 'daily' },
@@ -19,11 +20,11 @@ const MIN_DAYS_OPTIONS = [
   { label: '5+', value: 5 },
 ];
 
-export default function TrackingPanel({ params, setParams, industries, concepts, onSearch, loading }) {
+export default function TrackingPanel({ params, setParams, industries, concepts, onSearch, loading, hotData }) {
   const update = (key, val) => setParams(prev => ({ ...prev, [key]: val }));
 
-  const industryOptions = (industries || []).map(i => ({ label: i, value: i }));
-  const conceptOptions = (concepts || []).map(c => ({ label: c, value: c }));
+  const industryOptions = buildHotOptions(industries, hotData?.hotIndustries);
+  const conceptOptions = buildHotOptions(concepts, hotData?.hotConcepts);
 
   return (
     <Card size="small" className="mb-4" styles={{ body: { padding: '16px' } }}>

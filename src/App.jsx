@@ -41,6 +41,7 @@ export default function App() {
             concepts={screener.meta?.concepts}
             onSearch={screener.scan}
             loading={screener.loading}
+            hotData={hotData}
           />
           <ResultList results={screener.results} meta={screener.meta} loading={screener.loading} hotData={hotData} />
         </>
