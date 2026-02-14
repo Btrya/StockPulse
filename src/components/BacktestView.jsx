@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Spin, Empty, Alert } from 'antd';
+import { Spin, Empty, Alert, message } from 'antd';
 import BacktestPanel from './BacktestPanel';
 import ResultTable from './ResultTable';
 import ResultCard from './ResultCard';
@@ -8,7 +8,7 @@ export default function BacktestView({
   params, setParams,
   date, setDate,
   results, meta, loading,
-  scanning, scanInfo,
+  scanning, scanInfo, queue,
   startBacktest, refresh, cleanup,
   sharedIndustries, sharedConcepts,
   hotData,
@@ -16,8 +16,11 @@ export default function BacktestView({
   useEffect(() => cleanup, [cleanup]);
   const [stockFilter, setStockFilter] = useState('');
 
-  const handleStartBacktest = () => {
-    startBacktest(date, params.klt, false);
+  const handleStartBacktest = async () => {
+    const res = await startBacktest(date, params.klt, false);
+    if (res?.queued) {
+      message.success(`${date} 已加入回测队列（队列 ${res.queue?.length || 1} 天）`);
+    }
   };
 
   // 本地按代码/名称过滤
@@ -51,6 +54,7 @@ export default function BacktestView({
         stockFilter={stockFilter}
         onStockFilterChange={setStockFilter}
         hotData={hotData}
+        queue={queue}
       />
 
       {loading ? (

@@ -30,7 +30,7 @@ export default async function handler(req, res) {
   }
 
   // 周线回测：自动调整到该周周五
-  const date = klt === 'weekly' ? snapToFriday(rawDate) : rawDate;
+  let date = klt === 'weekly' ? snapToFriday(rawDate) : rawDate;
 
   try {
     if (!redis.isConfigured()) {
@@ -46,14 +46,22 @@ export default async function handler(req, res) {
       const cached = await redis.get(KEY.screenResult(date, klt));
       const hits = Array.isArray(cached) ? cached : (cached?.hits || null);
       if (hits) {
-        return res.json({ processed: hits.length, total: hits.length, idx: hits.length, done: true, needContinue: false, hits: hits.length });
+        const stillActive = !!(progress && progress.stocks);
+        return res.json({
+          processed: hits.length, total: hits.length, idx: hits.length,
+          done: true,
+          needContinue: stillActive,
+          hits: hits.length,
+          currentDate: progress?.date,
+          queue: progress?.queue || [],
+        });
       }
     }
 
     const forceReset = reset === true;
-    let needNew = forceReset || !progress || progress.date !== date || progress.klt !== klt || !progress.stocks;
 
-    if (needNew) {
+    if (forceReset || !progress || !progress.stocks) {
+      // 场景 C：无进度或强制重置 → 全新开始
       let stocks = await getStockList();
       stocks = stocks.filter(s => !s.name.includes('ST') && !s.name.includes('退'));
 
@@ -66,9 +74,33 @@ export default async function handler(req, res) {
         stocks,
         idx: 0,
         hits: [],
+        queue: [],
       };
       await redis.set(KEY.BACKTEST_PROGRESS, progress, TTL.PROGRESS);
+    } else if (progress.date !== date || progress.klt !== klt) {
+      // 场景 B：有进行中的扫描，日期/klt 不同 → 入队并立即返回
+      const queue = progress.queue || [];
+      if (!queue.some(q => q.date === date && q.klt === klt)) {
+        // 检查缓存：已有结果不入队
+        const cached = await redis.get(KEY.screenResult(date, klt));
+        if (!(Array.isArray(cached) ? cached.length : cached?.hits?.length)) {
+          queue.push({ date, klt });
+          progress.queue = queue;
+          await redis.set(KEY.BACKTEST_PROGRESS, progress, TTL.PROGRESS);
+        }
+      }
+      return res.json({
+        queued: true,
+        currentDate: progress.date,
+        idx: progress.idx,
+        total: progress.stocks.length,
+        hits: progress.hits.length,
+        done: false,
+        needContinue: true,
+        queue: progress.queue || [],
+      });
     }
+    // else: 场景 A — 同日期同 klt → 继续扫描（fall through）
 
     let idx = progress.idx || 0;
     const hits = progress.hits || [];
@@ -121,29 +153,43 @@ export default async function handler(req, res) {
     if (done) {
       // 存全量指标数据（无预筛选），查询时由 filterResults 按用户参数过滤
       await redis.set(KEY.screenResult(date, klt), hits, SCREEN_TTL[klt]);
-      await redis.del(KEY.BACKTEST_PROGRESS);
+      const queue = progress.queue || [];
+      if (queue.length > 0) {
+        const next = queue.shift();
+        progress.date = next.date;
+        progress.klt = next.klt;
+        progress.idx = 0;
+        progress.hits = [];
+        progress.queue = queue;
+        await redis.set(KEY.BACKTEST_PROGRESS, progress, TTL.PROGRESS);
+      } else {
+        await redis.del(KEY.BACKTEST_PROGRESS);
+      }
     } else {
       await redis.set(KEY.BACKTEST_PROGRESS, progress, TTL.PROGRESS);
     }
 
-    // 自调用链：扫描未完成时 fire-and-forget 调用自己，关掉网页后扫描继续
-    if (!done) {
+    // 自调用链：扫描未完成或队列有下一个时 fire-and-forget 调用自己
+    const hasMore = !done || (progress.queue?.length > 0);
+    if (hasMore) {
       const proto = req.headers['x-forwarded-proto'] || 'https';
       const selfUrl = `${proto}://${req.headers.host}/api/backtest`;
       fetch(selfUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: rawDate, klt }),
+        body: JSON.stringify({ date: progress.date, klt: progress.klt }),
       }).catch(() => {});
     }
 
     return res.json({
       processed,
-      total: progress.stocks.length,
+      total: progress.stocks?.length || 0,
       idx,
       hits: hits.length,
       done,
-      needContinue: !done,
+      needContinue: !done || !!(progress.queue?.length),
+      currentDate: progress.date,
+      queue: progress.queue || [],
       adjustedDate: date !== rawDate ? date : undefined,
     });
   } catch (err) {

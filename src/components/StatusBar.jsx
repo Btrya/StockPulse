@@ -89,6 +89,15 @@ export default function StatusBar({ klt }) {
     }
   }, [status?.scanning]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 回测进度 Tag（两个分支都用）
+  const bt = status?.backtest;
+  const btTag = bt ? (
+    <Tag icon={<SyncOutlined spin />} color="orange">
+      回测 {bt.date} {bt.idx}/{bt.total}
+      {bt.queue?.length > 0 ? ` 待扫描 ${bt.queue.length} 天` : ''}
+    </Tag>
+  ) : null;
+
   // 扫描中：显示进度 + 取消按钮
   if (scanning || status?.scanning) {
     const idx = scanInfo?.idx || status?.progress?.idx || 0;
@@ -103,6 +112,7 @@ export default function StatusBar({ klt }) {
         <Tooltip title="取消扫描">
           <Button size="small" type="text" icon={<StopOutlined />} onClick={handleCancel} style={{ color: '#f87171' }} />
         </Tooltip>
+        {btTag}
       </Space>
     );
   }
@@ -118,6 +128,7 @@ export default function StatusBar({ klt }) {
       ) : (
         <Tag color="warning">暂无数据</Tag>
       )}
+      {btTag}
       <Tooltip title={`手动扫描${klt === 'weekly' ? '周线' : '日线'}（仅当前周期）`}>
         <Button
           size="small"

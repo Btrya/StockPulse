@@ -19,12 +19,23 @@ export default async function handler(req, res) {
     const total = progress?.stocks?.length || 0;
     const idx = progress?.idx || 0;
 
+    // 回测进度
+    const btProgress = await redis.get(KEY.BACKTEST_PROGRESS);
+    const btActive = !!(btProgress && btProgress.stocks);
+
     return res.json({
       lastDate: meta?.lastDate ?? null,
       lastTime: meta?.lastTime ?? null,
       scanning,
       progress: scanning ? { idx, total, klt: progress.currentKlt } : null,
       boards: MARKET_BOARDS.map(b => ({ code: b.code, name: b.name })),
+      backtest: btActive ? {
+        date: btProgress.date,
+        klt: btProgress.klt,
+        idx: btProgress.idx || 0,
+        total: btProgress.stocks.length,
+        queue: btProgress.queue || [],
+      } : null,
     });
   } catch (err) {
     console.error('status error:', err);

@@ -21,7 +21,7 @@ export default function BacktestPanel({
   onStartBacktest, onSearch,
   scanning, scanInfo, loading, hasResults,
   stockFilter, onStockFilterChange,
-  hotData,
+  hotData, queue,
 }) {
   const update = (key, val) => setParams(prev => ({ ...prev, [key]: val }));
 
@@ -60,10 +60,9 @@ export default function BacktestPanel({
             type="primary"
             icon={<ExperimentOutlined />}
             onClick={onStartBacktest}
-            loading={scanning}
             disabled={!date}
           >
-            {scanning ? '回测中...' : '开始回测'}
+            {scanning ? '加入队列' : '开始回测'}
           </Button>
 
           {scanning && scanInfo && (
@@ -71,7 +70,11 @@ export default function BacktestPanel({
               <Progress
                 percent={pct}
                 size="small"
-                format={() => `正在拉取数据 ${scanInfo.idx}/${scanInfo.total}`}
+                format={() => {
+                  const qLen = (queue || []).length;
+                  const base = `回测 ${scanInfo.currentDate || date} ${scanInfo.idx}/${scanInfo.total}`;
+                  return qLen > 0 ? `${base}，队列 ${qLen} 天` : base;
+                }}
               />
             </div>
           )}

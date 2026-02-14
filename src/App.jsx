@@ -78,6 +78,7 @@ export default function App() {
           loading={backtest.loading}
           scanning={backtest.scanning}
           scanInfo={backtest.scanInfo}
+          queue={backtest.queue}
           startBacktest={backtest.startBacktest}
           refresh={backtest.refresh}
           cleanup={backtest.cleanup}
