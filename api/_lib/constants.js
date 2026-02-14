@@ -29,7 +29,7 @@ export const TTL = {
   STOCKS: 86400,              // 24h
   SCREEN_RESULT_DAILY: 604800,  // 7d
   SCREEN_RESULT_WEEKLY: 2592000, // 30d
-  PROGRESS: 7200,              // 2h
+  PROGRESS: 21600,             // 6h
   CONCEPTS: 604800,            // 7d
   BACKTEST_RESULT: 172800,     // 48h
   HOT_DATA: 3600,               // 1h

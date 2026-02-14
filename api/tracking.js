@@ -1,5 +1,5 @@
 import * as redis from './_lib/redis.js';
-import { KEY, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS, TRACKING_DAILY_WINDOW, TRACKING_WEEKLY_WINDOW } from './_lib/constants.js';
+import { KEY, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS, TRACKING_DAILY_WINDOW, TRACKING_WEEKLY_WINDOW, isWeekend } from './_lib/constants.js';
 import { filterResults } from './_lib/screener.js';
 
 export default async function handler(req, res) {
@@ -18,15 +18,16 @@ export default async function handler(req, res) {
 
     const window = klt === 'daily' ? TRACKING_DAILY_WINDOW : TRACKING_WEEKLY_WINDOW;
 
-    // 读取 scan:dates，不足 window 条则探测 Redis key 补充
+    // 读取 scan:dates，过滤周末，不足 window 条则探测 Redis key 补充
     let scanDates = await redis.get(KEY.scanDates(klt));
+    if (scanDates) scanDates = scanDates.filter(d => !isWeekend(d));
     if (!scanDates || scanDates.length < window) {
       const existing = new Set(scanDates || []);
       // 日线探 15 天（跨周末），周线探 40 天（跨月）
       const probeRange = klt === 'weekly' ? 40 : 15;
       for (let i = 0; i < probeRange; i++) {
         const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
-        if (existing.has(d)) continue;
+        if (existing.has(d) || isWeekend(d)) continue;
         const data = await redis.get(KEY.screenResult(d, klt));
         if (data) existing.add(d);
         if (existing.size >= window) break;

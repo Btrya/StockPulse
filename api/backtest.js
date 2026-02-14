@@ -126,6 +126,17 @@ export default async function handler(req, res) {
       await redis.set(KEY.BACKTEST_PROGRESS, progress, TTL.PROGRESS);
     }
 
+    // 自调用链：扫描未完成时 fire-and-forget 调用自己，关掉网页后扫描继续
+    if (!done) {
+      const proto = req.headers['x-forwarded-proto'] || 'https';
+      const selfUrl = `${proto}://${req.headers.host}/api/backtest`;
+      fetch(selfUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: rawDate, klt }),
+      }).catch(() => {});
+    }
+
     return res.json({
       processed,
       total: progress.stocks.length,

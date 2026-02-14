@@ -1,7 +1,7 @@
 import { getStockList } from './_lib/tushare.js';
 import { screenStock } from './_lib/screener.js';
 import * as redis from './_lib/redis.js';
-import { KEY, TTL, getCNDate, isMarketClosed } from './_lib/constants.js';
+import { KEY, TTL, getCNDate, isMarketClosed, isWeekend } from './_lib/constants.js';
 
 const TIMEOUT_MS = 50000;
 
@@ -127,12 +127,14 @@ export default async function handler(req, res) {
       const screenTTL = klt === 'daily' ? TTL.SCREEN_RESULT_DAILY : TTL.SCREEN_RESULT_WEEKLY;
       await redis.set(KEY.screenResult(today, klt), hits, screenTTL);
 
-      // 追加日期到 scan:dates
-      const maxLen = klt === 'daily' ? 10 : 8;
-      const dates = (await redis.get(KEY.scanDates(klt))) || [];
-      if (dates[0] !== today) dates.unshift(today);
-      if (dates.length > maxLen) dates.length = maxLen;
-      await redis.set(KEY.scanDates(klt), dates, screenTTL);
+      // 追加日期到 scan:dates（跳过周末，避免污染追踪数据）
+      if (!isWeekend(today)) {
+        const maxLen = klt === 'daily' ? 10 : 8;
+        const dates = (await redis.get(KEY.scanDates(klt))) || [];
+        if (dates[0] !== today) dates.unshift(today);
+        if (dates.length > maxLen) dates.length = maxLen;
+        await redis.set(KEY.scanDates(klt), dates, screenTTL);
+      }
 
       if (klt === 'daily' && !progress.singleKlt) {
         // 非单 klt 模式：自动切到周线
