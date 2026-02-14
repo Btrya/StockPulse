@@ -1,5 +1,5 @@
 import * as redis from './_lib/redis.js';
-import { KEY, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS, TRACKING_DAILY_WINDOW, TRACKING_WEEKLY_WINDOW, isWeekend } from './_lib/constants.js';
+import { KEY, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS, TRACKING_DAILY_WINDOW, TRACKING_WEEKLY_WINDOW, isWeekend, getCNDate } from './_lib/constants.js';
 import { filterResults } from './_lib/screener.js';
 
 export default async function handler(req, res) {
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       // 日线探 15 天（跨周末），周线探 40 天（跨月）
       const probeRange = klt === 'weekly' ? 40 : 15;
       for (let i = 0; i < probeRange; i++) {
-        const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10);
+        const d = getCNDate(new Date(Date.now() - i * 86400000));
         if (existing.has(d) || isWeekend(d)) continue;
         const data = await redis.get(KEY.screenResult(d, klt));
         if (data) existing.add(d);

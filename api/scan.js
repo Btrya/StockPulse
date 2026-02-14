@@ -1,7 +1,7 @@
 import { getStockList } from './_lib/tushare.js';
 import { screenStock } from './_lib/screener.js';
 import * as redis from './_lib/redis.js';
-import { KEY, TTL, getCNDate, isMarketClosed, isWeekend } from './_lib/constants.js';
+import { KEY, TTL, getCNDate, isMarketClosed, isWeekend, getLastTradingDate } from './_lib/constants.js';
 
 const TIMEOUT_MS = 50000;
 
@@ -23,9 +23,10 @@ export default async function handler(req, res) {
       return res.json({ cancelled: true });
     }
 
-    // 收盘前不允许手动触发新扫描（续扫进行中的除外）
+    // 收盘前不允许手动触发新扫描（续扫进行中的除外；周末市场已收盘，放行）
     const now = new Date();
-    if (!isMarketClosed(now)) {
+    const cnToday = getCNDate(now);
+    if (!isMarketClosed(now) && !isWeekend(cnToday)) {
       const progress = await redis.get(KEY.PROGRESS);
       if (!progress || progress.currentKlt === null) {
         return res.json({ error: '市场尚未收盘，请在 15:00 后扫描', blocked: true });
@@ -33,7 +34,7 @@ export default async function handler(req, res) {
     }
 
     const startTime = Date.now();
-    const today = getCNDate(now);
+    const today = getLastTradingDate(now);
     const requestedKlt = body.klt || null;
 
     // 读取进度（与 cron 共享同一个 progress key）
