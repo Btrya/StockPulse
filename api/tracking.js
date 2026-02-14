@@ -72,14 +72,22 @@ export default async function handler(req, res) {
     }
 
     // 识别连续出现的股票（日期必须相邻，不能断）
+    // 预计算相邻日期间的日历间距，超过阈值视为不连续
+    const maxGap = klt === 'weekly' ? 10 : 4;
+    let dateGapBreak = dates.length; // 间距断裂位置（默认不断）
+    for (let i = 1; i < dates.length; i++) {
+      const gap = (new Date(dates[i - 1]) - new Date(dates[i])) / 86400000;
+      if (gap > maxGap) { dateGapBreak = i; break; }
+    }
+
     const tracked = [];
     for (const [tsCode, entries] of Object.entries(stockMap)) {
       // 按日期降序排列（dates 已经是降序）
       const entryDates = entries.map(e => e.date);
 
-      // 从最新日期开始，检查连续性
+      // 从最新日期开始，检查连续性（不超过间距断裂位置）
       let consecutiveDays = 0;
-      for (let i = 0; i < dates.length; i++) {
+      for (let i = 0; i < dateGapBreak; i++) {
         if (entryDates.includes(dates[i])) {
           consecutiveDays++;
         } else {
