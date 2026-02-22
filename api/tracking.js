@@ -133,20 +133,13 @@ export default async function handler(req, res) {
     }
 
     // 用用户参数二次过滤（基于 latest）
-    const userFiltered = tracked.filter(t => {
-      const r = t.latest;
-      if (r.j >= j) return false;
-      if (r.close < r.bullBear * (1 - tolerance / 100)) return false;
-      if (excludeBoards.length && excludeBoards.includes(r.board)) return false;
-      if (industries.length && !industries.includes(r.industry)) return false;
-      if (concepts.length) {
-        const rc = r.concepts || [];
-        if (!concepts.some(c => rc.includes(c))) return false;
-      }
-      const nearShort = Math.abs(r.deviationShort) <= tolerance;
-      const nearBull = Math.abs(r.deviationBull) <= tolerance;
-      return nearShort || nearBull;
-    });
+    // 复用 filterResults 的策略逻辑，通过包装 latest 字段过桥
+    const latestArr = tracked.map(t => t.latest);
+    const passSet = new Set(
+      filterResults(latestArr, { jThreshold: j, tolerance, industries, excludeBoards, concepts })
+        .map(r => r.ts_code)
+    );
+    const userFiltered = tracked.filter(t => passSet.has(t.ts_code));
 
     // 按 consecutiveDays 降序，同天数按 J 值升序
     userFiltered.sort((a, b) => b.consecutiveDays - a.consecutiveDays || a.latest.j - b.latest.j);
