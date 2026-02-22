@@ -1,7 +1,8 @@
 import { getStockList } from './_lib/tushare.js';
 import { screenStock } from './_lib/screener.js';
 import * as redis from './_lib/redis.js';
-import { KEY, TTL, snapToFriday } from './_lib/constants.js';
+import { KEY, TTL, TUSHARE_BULK, snapToFriday } from './_lib/constants.js';
+import { bulkScan } from './_lib/bulk-scan.js';
 
 const SCREEN_TTL = { daily: TTL.SCREEN_RESULT_DAILY, weekly: TTL.SCREEN_RESULT_WEEKLY };
 
@@ -37,7 +38,7 @@ export default async function handler(req, res) {
       const cached = await redis.get(KEY.screenResult(date, klt));
       const hits = Array.isArray(cached) ? cached : (cached?.hits || null);
       if (hits) {
-        const stillActive = !!(progress && progress.stocks);
+        const stillActive = !!(progress && (progress.stocks || progress.phase));
         return res.json({
           processed: hits.length, total: hits.length, idx: hits.length,
           done: true,
@@ -49,6 +50,12 @@ export default async function handler(req, res) {
       }
     }
 
+    // ── 批量模式 ──
+    if (TUSHARE_BULK) {
+      return await handleBulk(req, res, { date, klt, reset, rawDate, startTime, progress });
+    }
+
+    // ── 原逻辑：逐股票拉取 ──
     const forceReset = reset === true;
 
     if (forceReset || !progress || !progress.stocks) {
@@ -187,4 +194,102 @@ export default async function handler(req, res) {
     console.error('backtest error:', err);
     return res.status(500).json({ error: err.message });
   }
+}
+
+// ── 批量模式处理 ──
+async function handleBulk(req, res, { date, klt, reset, rawDate, startTime, progress }) {
+  const forceReset = reset === true;
+
+  // 队列逻辑：有进行中的不同日期 → 入队
+  if (!forceReset && progress && progress.phase && progress.date !== date) {
+    const queue = progress.queue || [];
+    if (!queue.some(q => q.date === date && q.klt === klt)) {
+      const cached = await redis.get(KEY.screenResult(date, klt));
+      if (!(Array.isArray(cached) ? cached.length : cached?.hits?.length)) {
+        queue.push({ date, klt });
+        progress.queue = queue;
+        await redis.set(KEY.BACKTEST_PROGRESS, progress, TTL.PROGRESS);
+      }
+    }
+    return res.json({
+      queued: true,
+      currentDate: progress.date,
+      done: false,
+      needContinue: true,
+      queue: progress.queue || [],
+      phase: progress.phase,
+      dateIdx: progress.dateIdx,
+    });
+  }
+
+  // 调用 bulkScan — 用 BACKTEST_PROGRESS 独立于 scan
+  const result = await bulkScan({
+    klt,
+    today: date,
+    startTime,
+    singleKlt: true,
+    forceReset,
+    progressKey: KEY.BACKTEST_PROGRESS,
+    skipScanDates: true,
+  });
+
+  // bulkScan done → 检查队列，消费下一个
+  if (result.done) {
+    const prog = await redis.get(KEY.BACKTEST_PROGRESS);
+    const queue = (progress?.queue || prog?.queue || []);
+    if (queue.length > 0) {
+      const next = queue.shift();
+      // 为下一个日期创建新进度
+      await redis.set(KEY.BACKTEST_PROGRESS, {
+        date: next.date,
+        klt: next.klt,
+        singleKlt: true,
+        phase: 'fetch',
+        dateIdx: 0,
+        tradingDates: null,
+        startedAt: new Date().toISOString(),
+        queue,
+      }, TTL.PROGRESS);
+      // fire-and-forget 触发下一个
+      const proto = req.headers['x-forwarded-proto'] || 'https';
+      const selfUrl = `${proto}://${req.headers.host}/api/backtest`;
+      fetch(selfUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: next.date, klt: next.klt }),
+      }).catch(() => {});
+
+      return res.json({
+        ...result,
+        needContinue: true,
+        currentDate: next.date,
+        queue,
+        adjustedDate: date !== rawDate ? date : undefined,
+      });
+    }
+  }
+
+  // done 且无队列 → 清理进度
+  if (result.done) {
+    await redis.del(KEY.BACKTEST_PROGRESS);
+  }
+
+  // 未完成 → self-call 继续
+  if (!result.done) {
+    const proto = req.headers['x-forwarded-proto'] || 'https';
+    const selfUrl = `${proto}://${req.headers.host}/api/backtest`;
+    fetch(selfUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, klt }),
+    }).catch(() => {});
+  }
+
+  return res.json({
+    ...result,
+    needContinue: !result.done,
+    currentDate: date,
+    queue: progress?.queue || [],
+    adjustedDate: date !== rawDate ? date : undefined,
+  });
 }

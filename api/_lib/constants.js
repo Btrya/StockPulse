@@ -10,6 +10,9 @@ export const DEFAULT_KLT = 'daily'; // daily | weekly
 // Tushare 并发控制（免费版限流较严）
 export const TUSHARE_DELAY_MS = 150;
 
+// 批量模式开关（按日期拉全市场，默认开启，TUSHARE_BULK=0 回退逐股票模式）
+export const TUSHARE_BULK = process.env.TUSHARE_BULK !== '0';
+
 // Redis key
 export const KEY = {
   STOCKS: 'stocks:list',
@@ -22,6 +25,8 @@ export const KEY = {
   backtestResult: (date, klt) => `backtest:${date}:${klt}`,
   BACKTEST_PROGRESS: 'backtest:progress',
   HOT_DATA: 'hot:data',
+  BULK_PROGRESS: 'bulk:progress',
+  bulkDate: (klt, td) => `bulk:${klt}:${td}`,
 };
 
 // TTL (seconds)

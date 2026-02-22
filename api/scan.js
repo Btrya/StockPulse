@@ -1,7 +1,8 @@
 import { getStockList } from './_lib/tushare.js';
 import { screenStock } from './_lib/screener.js';
 import * as redis from './_lib/redis.js';
-import { KEY, TTL, getCNDate, isMarketClosed, isWeekend, getLastTradingDate, snapToFriday } from './_lib/constants.js';
+import { KEY, TTL, TUSHARE_BULK, getCNDate, isMarketClosed, isWeekend, getLastTradingDate, snapToFriday } from './_lib/constants.js';
+import { bulkScan } from './_lib/bulk-scan.js';
 
 const TIMEOUT_MS = 50000;
 
@@ -20,6 +21,10 @@ export default async function handler(req, res) {
     // 取消扫描
     if (body.cancel) {
       await redis.del(KEY.PROGRESS);
+      // 批量模式：清理 BULK_PROGRESS + 所有 bulk:* 临时 key
+      await redis.del(KEY.BULK_PROGRESS);
+      const bulkKeys = await redis.keys('bulk:*');
+      if (bulkKeys && bulkKeys.length) await redis.del(...bulkKeys);
       return res.json({ cancelled: true });
     }
 
@@ -28,7 +33,9 @@ export default async function handler(req, res) {
     const cnToday = getCNDate(now);
     if (!isMarketClosed(now) && !isWeekend(cnToday)) {
       const progress = await redis.get(KEY.PROGRESS);
-      if (!progress || progress.currentKlt === null) {
+      const bulkProgress = TUSHARE_BULK ? await redis.get(KEY.BULK_PROGRESS) : null;
+      const hasOngoing = (progress && progress.currentKlt !== null) || bulkProgress;
+      if (!hasOngoing) {
         return res.json({ error: '市场尚未收盘，请在 15:00 后扫描', blocked: true });
       }
     }
@@ -37,6 +44,30 @@ export default async function handler(req, res) {
     const today = getLastTradingDate(now);
     const requestedKlt = body.klt || null;
 
+    // ── 批量模式：按日期拉全市场 ──
+    if (TUSHARE_BULK) {
+      const forceReset = body.reset === true;
+      const result = await bulkScan({
+        klt: requestedKlt,
+        today,
+        startTime,
+        singleKlt: !!requestedKlt,
+        forceReset,
+      });
+      if (!result.done) {
+        const proto = req.headers['x-forwarded-proto'] || 'https';
+        const selfUrl = `${proto}://${req.headers.host}/api/scan`;
+        const headers = { 'Content-Type': 'application/json' };
+        fetch(selfUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({}),
+        }).catch(() => {});
+      }
+      return res.json({ ...result, needContinue: !result.done });
+    }
+
+    // ── 原逻辑：逐股票拉取 ──
     // 读取进度（与 cron 共享同一个 progress key）
     let progress = await redis.get(KEY.PROGRESS);
 

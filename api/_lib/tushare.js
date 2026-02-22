@@ -4,22 +4,29 @@ function getToken() {
   return process.env.TUSHARE_TOKEN;
 }
 
-async function tushareRequest(apiName, params = {}, fields = '') {
-  const res = await fetch(TUSHARE_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      api_name: apiName,
-      token: getToken(),
-      params,
-      fields,
-    }),
-    signal: AbortSignal.timeout(30000),
-  });
-  if (!res.ok) throw new Error(`Tushare HTTP ${res.status}`);
-  const data = await res.json();
-  if (data.code !== 0) throw new Error(`Tushare: ${data.msg}`);
-  return data.data;
+async function tushareRequest(apiName, params = {}, fields = '', retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    const res = await fetch(TUSHARE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_name: apiName,
+        token: getToken(),
+        params,
+        fields,
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+    if (!res.ok) throw new Error(`Tushare HTTP ${res.status}`);
+    const data = await res.json();
+    if (data.code === 0) return data.data;
+    // 限频错误：等待后重试
+    if (data.msg && data.msg.includes('每分钟') && attempt < retries) {
+      await new Promise(r => setTimeout(r, attempt * 5000));
+      continue;
+    }
+    throw new Error(`Tushare: ${data.msg}`);
+  }
 }
 
 // 解析 Tushare 返回的 fields+items 格式
@@ -103,6 +110,37 @@ export async function getThsMembers(tsCode) {
 // 获取同花顺热榜数据
 export async function getThsHot(tradeDate, market, isNew = 'Y') {
   const data = await tushareRequest('ths_hot', { trade_date: tradeDate, market, is_new: isNew });
+  return parseData(data);
+}
+
+// 获取最近 N 个交易日列表（通过 trade_cal）
+export async function getTradingDates(endDate, count) {
+  const startD = new Date(endDate + 'T12:00:00Z');
+  startD.setDate(startD.getDate() - Math.ceil(count * 1.8));
+  const fmtDate = d => d.toISOString().slice(0, 10).replace(/-/g, '');
+  const data = await tushareRequest('trade_cal', {
+    exchange: 'SSE',
+    start_date: fmtDate(startD),
+    end_date: endDate.replace(/-/g, ''),
+    is_open: '1',
+  }, 'cal_date');
+  const dates = parseData(data).map(r => r.cal_date).sort();
+  return dates.slice(-count);
+}
+
+// 按交易日拉全市场日线
+export async function getDailyByDate(tradeDate) {
+  const data = await tushareRequest('daily', {
+    trade_date: tradeDate,
+  }, 'ts_code,trade_date,open,high,low,close,vol');
+  return parseData(data);
+}
+
+// 按交易日拉全市场周线
+export async function getWeeklyByDate(tradeDate) {
+  const data = await tushareRequest('weekly', {
+    trade_date: tradeDate,
+  }, 'ts_code,trade_date,open,high,low,close,vol');
   return parseData(data);
 }
 

@@ -34,8 +34,12 @@ export async function set(key, value, ttl) {
   return cmd('SET', key, str);
 }
 
-export async function del(key) {
-  return cmd('DEL', key);
+export async function del(...keys) {
+  return cmd('DEL', ...keys);
+}
+
+export async function keys(pattern) {
+  return cmd('KEYS', pattern);
 }
 
 export function isConfigured() {

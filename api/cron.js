@@ -1,7 +1,8 @@
 import { getStockList, batchGetKlines } from './_lib/tushare.js';
 import { screenStock } from './_lib/screener.js';
 import * as redis from './_lib/redis.js';
-import { KEY, TTL, getCNDate, isWeekend, getLastTradingDate, snapToFriday } from './_lib/constants.js';
+import { KEY, TTL, TUSHARE_BULK, getCNDate, isWeekend, getLastTradingDate, snapToFriday } from './_lib/constants.js';
+import { bulkScan } from './_lib/bulk-scan.js';
 
 const TIMEOUT_MS = 50000;
 
@@ -20,6 +21,20 @@ export default async function handler(req, res) {
       return res.json({ message: 'Redis not configured, skipping' });
     }
 
+    // ── 批量模式：按日期拉全市场 ──
+    if (TUSHARE_BULK) {
+      const result = await bulkScan({ today, startTime });
+      if (!result.done) {
+        const proto = req.headers['x-forwarded-proto'] || 'https';
+        const selfUrl = `${proto}://${req.headers.host}/api/cron`;
+        const headers = { 'Content-Type': 'application/json' };
+        if (process.env.CRON_SECRET) headers['Authorization'] = `Bearer ${process.env.CRON_SECRET}`;
+        fetch(selfUrl, { method: 'GET', headers }).catch(() => {});
+      }
+      return res.json(result);
+    }
+
+    // ── 原逻辑：逐股票拉取 ──
     // 读取进度（支持断点续扫）
     let progress = await redis.get(KEY.PROGRESS);
 
