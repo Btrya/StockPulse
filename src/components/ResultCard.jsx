@@ -13,10 +13,17 @@ function touchLabel(t) {
   return t === 'H' ? '高' : '低';
 }
 
-export default function ResultCard({ item, hotData }) {
+function colorCount(n) {
+  if (n >= 5) return 'red';
+  if (n >= 3) return 'orange';
+  return 'blue';
+}
+
+export default function ResultCard({ item, hotData, subTab }) {
   const hotSets = useMemo(() => buildHotSets(hotData), [hotData]);
   const reasons = hotSets ? getHotReasons(item, hotSets) : [];
   const isHot = reasons.length > 0;
+  const isLimitUp = subTab === 'consecutiveLimitUp';
 
   return (
     <Card size="small" className={isHot ? 'hot-card' : ''}>
@@ -31,7 +38,10 @@ export default function ResultCard({ item, hotData }) {
             </Tag>
           ))}
         </div>
-        <Tag color={colorJ(item.j)} className="num m-0">J {item.j}</Tag>
+        {isLimitUp
+          ? <Tag color={colorCount(item.consecutiveCount)} className="num m-0">{item.consecutiveCount} 板</Tag>
+          : <Tag color={colorJ(item.j)} className="num m-0">J {item.j}</Tag>
+        }
       </div>
       {item.concepts?.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-2">
@@ -52,14 +62,23 @@ export default function ResultCard({ item, hotData }) {
           <span className="text-slate-500">最低 / 最高</span>
           <span className="num">{item.low} / {item.high ?? '-'}</span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-slate-500">短趋偏离</span>
-          <span className="num">{item.deviationShort > 0 ? '+' : ''}{item.deviationShort}% <span className="text-slate-500">{touchLabel(item.touchShort)}</span></span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-slate-500">多空偏离</span>
-          <span className="num">{item.deviationBull > 0 ? '+' : ''}{item.deviationBull}% <span className="text-slate-500">{touchLabel(item.touchBull)}</span></span>
-        </div>
+        {isLimitUp ? (
+          <div className="flex justify-between col-span-2">
+            <span className="text-slate-500">连板数</span>
+            <Tag color={colorCount(item.consecutiveCount)} className="m-0 num">{item.consecutiveCount} 连板</Tag>
+          </div>
+        ) : (
+          <>
+            <div className="flex justify-between">
+              <span className="text-slate-500">短趋偏离</span>
+              <span className="num">{item.deviationShort > 0 ? '+' : ''}{item.deviationShort}% <span className="text-slate-500">{touchLabel(item.touchShort)}</span></span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">多空偏离</span>
+              <span className="num">{item.deviationBull > 0 ? '+' : ''}{item.deviationBull}% <span className="text-slate-500">{touchLabel(item.touchBull)}</span></span>
+            </div>
+          </>
+        )}
       </div>
     </Card>
   );

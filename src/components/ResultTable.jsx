@@ -129,15 +129,35 @@ const columns = [
   },
 ];
 
-export default function ResultTable({ data, hotData }) {
+// 连板模式隐藏的列
+const LIMIT_UP_HIDE = ['deviationShort', 'shortTrend', 'deviationBull', 'bullBear', 'j'];
+
+// 连板数列
+const consecutiveCol = {
+  title: '连板',
+  dataIndex: 'consecutiveCount',
+  width: 70,
+  align: 'center',
+  defaultSortOrder: 'descend',
+  sorter: (a, b) => (a.consecutiveCount || 0) - (b.consecutiveCount || 0),
+  render: v => v ? <Tag color={v >= 5 ? 'red' : v >= 3 ? 'orange' : 'blue'}>{v} 板</Tag> : '-',
+};
+
+export default function ResultTable({ data, hotData, subTab }) {
   const hotSets = useMemo(() => buildHotSets(hotData), [hotData]);
+  const isLimitUp = subTab === 'consecutiveLimitUp';
 
   // 动态生成行业 & 概念 filter
   const industries = [...new Set(data.map(r => r.industry).filter(Boolean))];
   const conceptSet = [...new Set(data.flatMap(r => r.concepts || []))].sort(
     (a, b) => a.localeCompare(b, 'zh-CN')
   );
-  const cols = columns.map(c => {
+
+  let baseCols = isLimitUp
+    ? [...columns.filter(c => !LIMIT_UP_HIDE.includes(c.dataIndex)), consecutiveCol]
+    : columns;
+
+  const cols = baseCols.map(c => {
     if (c.dataIndex === 'industry') return { ...c, filters: industries.map(i => ({ text: i, value: i })) };
     if (c.dataIndex === 'concepts') return { ...c, filters: conceptSet.map(i => ({ text: i, value: i })) };
     if (c.dataIndex === 'name' && hotSets) {

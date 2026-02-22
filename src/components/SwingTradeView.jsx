@@ -21,7 +21,7 @@ export default function SwingTradeView({
 }) {
   const subItems = [
     { key: 'brickReversal', label: '砖型反转' },
-    { key: 'consecutiveLimitUp', label: '二连板' },
+    { key: 'consecutiveLimitUp', label: '连板' },
   ];
 
   const showLineSelector = subTab === 'brickReversal';
@@ -90,11 +90,11 @@ export default function SwingTradeView({
           )}
 
           <div className="hidden md:block">
-            <ResultTable data={results} hotData={hotData} />
+            <ResultTable data={results} hotData={hotData} subTab={subTab} />
           </div>
           <div className="md:hidden flex flex-col gap-3">
             {results.map(item => (
-              <ResultCard key={item.code} item={item} hotData={hotData} />
+              <ResultCard key={item.code} item={item} hotData={hotData} subTab={subTab} />
             ))}
           </div>
         </div>

@@ -58,10 +58,10 @@ export const STRATEGIES = {
   },
   consecutiveLimitUp: {
     id: 'consecutiveLimitUp',
-    name: '二连板',
-    desc: '连续两个交易日涨停',
+    name: '连板',
+    desc: '连续两个及以上交易日涨停',
     paramKeys: [],
-    test: (r) => !!(r.limitUp && r.limitUpPrev),
+    test: (r) => r.consecutiveCount >= 2,
   },
 };
 
@@ -137,6 +137,13 @@ export function screenStock(stock, opts = {}) {
   const limitUp = isLimitUp(len - 1);
   const limitUpPrev = isLimitUp(len - 2);
 
+  // 连板数：从最新交易日往前数连续涨停天数
+  let consecutiveCount = 0;
+  for (let i = len - 1; i >= 1; i--) {
+    if (!isLimitUp(i)) break;
+    consecutiveCount++;
+  }
+
   return {
     code,
     ts_code,
@@ -160,6 +167,7 @@ export function screenStock(stock, opts = {}) {
     brickPrev2: brickPrev2 != null ? round2(brickPrev2) : null,
     limitUp,
     limitUpPrev,
+    consecutiveCount,
   };
 }
 
