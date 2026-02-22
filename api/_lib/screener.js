@@ -1,4 +1,4 @@
-import { shortTrendLine, bullBearLine, kdj } from './indicators.js';
+import { shortTrendLine, bullBearLine, kdj, brickChart } from './indicators.js';
 import { WIDE_J_THRESHOLD, WIDE_TOLERANCE, getMarketBoard } from './constants.js';
 
 // ── 策略注册表 ────────────────────────────────────────────
@@ -30,6 +30,32 @@ export const STRATEGIES = {
     paramKeys: [],
     test: (r) => r.shortTrend > r.bullBear,
   },
+  brickReversal: {
+    id: 'brickReversal',
+    name: '砖型图绿转红',
+    desc: '砖型图从下降转上升，且反转力度 > 前值 2/3',
+    paramKeys: [],
+    test: (r) => {
+      if (r.brick == null || r.brickPrev == null || r.brickPrev2 == null) return false;
+      // 前天绿（下降）：brickPrev < brickPrev2
+      const prevGreen = r.brickPrev < r.brickPrev2;
+      // 今天红（上升）：brick > brickPrev
+      const nowRed = r.brick > r.brickPrev;
+      // 有效反转：当前值 > 前一值 * 2/3
+      const validForce = r.brick > r.brickPrev * 2 / 3;
+      return prevGreen && nowRed && validForce;
+    },
+  },
+  priceAboveLine: {
+    id: 'priceAboveLine',
+    name: '收盘价在趋势线上方',
+    desc: '收盘价高于短期趋势线或多空分界线',
+    paramKeys: ['line'],
+    test: (r, { line = 'short' }) => {
+      if (line === 'bull') return r.close > r.bullBear;
+      return r.close > r.shortTrend;
+    },
+  },
 };
 
 // 默认启用的策略（保持现有行为：J值低位 AND 触碰趋势线）
@@ -54,6 +80,8 @@ export function screenStock(stock, opts = {}) {
 
   const { k, d, j } = kdj(highs, lows, closes);
   if (j === null) return null;
+
+  const { brick, brickPrev, brickPrev2 } = brickChart(highs, lows, closes);
 
   if (!opts.noFilter) {
     const jMax = opts.jThreshold ?? WIDE_J_THRESHOLD;
@@ -108,6 +136,9 @@ export function screenStock(stock, opts = {}) {
     touchShort,
     deviationBull: round2(deviationBull),
     touchBull,
+    brick: brick != null ? round2(brick) : null,
+    brickPrev: brickPrev != null ? round2(brickPrev) : null,
+    brickPrev2: brickPrev2 != null ? round2(brickPrev2) : null,
   };
 }
 
@@ -129,11 +160,11 @@ export function applyStrategies(r, params, strategyIds = DEFAULT_STRATEGIES, com
 // strategies/combinator 可选，不传时使用默认策略（lowJ AND nearLine），行为与改动前完全一致
 export function filterResults(results, {
   jThreshold, tolerance, industries, excludeBoards, concepts,
-  strategies, combinator,
+  strategies, combinator, line,
 } = {}) {
   const sIds = strategies || DEFAULT_STRATEGIES;
   const comb = combinator || 'AND';
-  const params = { jThreshold: jThreshold ?? 0, tolerance: tolerance ?? 2 };
+  const params = { jThreshold: jThreshold ?? 0, tolerance: tolerance ?? 2, line: line ?? 'short' };
 
   return results.filter(r => {
     // 收盘价低于多空线（含容差）视为噪音

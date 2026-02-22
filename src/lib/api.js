@@ -15,6 +15,9 @@ export function fetchResults(params) {
   if (params.industries?.length) qs.set('industries', params.industries.join(','));
   if (params.excludeBoards?.length) qs.set('excludeBoards', params.excludeBoards.join(','));
   if (params.concepts?.length) qs.set('concepts', params.concepts.join(','));
+  if (params.strategies?.length) qs.set('strategies', params.strategies.join(','));
+  if (params.combinator) qs.set('combinator', params.combinator);
+  if (params.line) qs.set('line', params.line);
   return request(`/results?${qs}`);
 }
 

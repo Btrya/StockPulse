@@ -1,21 +1,24 @@
 import { useState } from 'react';
 import { Tabs } from 'antd';
-import { FilterOutlined, LineChartOutlined, ExperimentOutlined, SearchOutlined } from '@ant-design/icons';
+import { FilterOutlined, LineChartOutlined, ExperimentOutlined, SearchOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import Layout from './components/Layout';
 import ParamPanel from './components/ParamPanel';
 import ResultList from './components/ResultList';
 import TrackingView from './components/TrackingView';
 import BacktestView from './components/BacktestView';
 import StockSearch from './components/StockSearch';
+import SwingTradeView from './components/SwingTradeView';
 import useScreener from './hooks/useScreener';
 import useTracking from './hooks/useTracking';
 import useBacktest from './hooks/useBacktest';
 import useHotData from './hooks/useHotData';
+import useSwingTrade from './hooks/useSwingTrade';
 
 export default function App() {
   const screener = useScreener();
   const tracking = useTracking();
   const backtest = useBacktest();
+  const swingTrade = useSwingTrade();
   const { hotData } = useHotData();
   const [activeTab, setActiveTab] = useState('screener');
 
@@ -84,6 +87,23 @@ export default function App() {
           cleanup={backtest.cleanup}
           sharedIndustries={sharedIndustries}
           sharedConcepts={sharedConcepts}
+          hotData={hotData}
+        />
+      ),
+    },
+    {
+      key: 'swing',
+      label: <span><ThunderboltOutlined /> 超短线</span>,
+      children: (
+        <SwingTradeView
+          subTab={swingTrade.subTab}
+          setSubTab={swingTrade.setSubTab}
+          line={swingTrade.line}
+          setLine={swingTrade.setLine}
+          results={swingTrade.results}
+          meta={swingTrade.meta}
+          loading={swingTrade.loading}
+          refresh={swingTrade.refresh}
           hotData={hotData}
         />
       ),

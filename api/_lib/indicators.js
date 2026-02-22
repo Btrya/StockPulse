@@ -9,6 +9,17 @@ export function ema(arr, period) {
   return out;
 }
 
+// SMA(X, N, M) 递归加权平均（返回完整数组）
+// result[i] = (M * X[i] + (N - M) * result[i-1]) / N
+export function smaCN(arr, n, m) {
+  if (arr.length === 0) return [];
+  const out = [arr[0]];
+  for (let i = 1; i < arr.length; i++) {
+    out.push((m * arr[i] + (n - m) * out[i - 1]) / n);
+  }
+  return out;
+}
+
 // SMA - 只返回最后一个值（性能优化）
 export function smaLast(arr, period) {
   if (arr.length < period) return null;
@@ -64,4 +75,56 @@ export function bullBearLine(closes) {
   const ma114 = smaLast(closes, 114);
   if (ma14 === null || ma28 === null || ma57 === null || ma114 === null) return null;
   return (ma14 + ma28 + ma57 + ma114) / 4;
+}
+
+// 砖型图指标：返回最近三天的值（判断绿转红需要三天）
+// N=4（HHV/LLV 窗口），M=6（双重平滑周期）
+export function brickChart(highs, lows, closes, n = 4, m = 6) {
+  if (closes.length < n + m + 3) return { brick: null, brickPrev: null, brickPrev2: null };
+
+  // 构建 HHV(HIGH,N) 和 LLV(LOW,N) 序列
+  const len = closes.length;
+  const var1aArr = [];
+  const var3aArr = [];
+
+  for (let i = n - 1; i < len; i++) {
+    let hh = -Infinity;
+    let ll = Infinity;
+    for (let j = i - n + 1; j <= i; j++) {
+      if (highs[j] > hh) hh = highs[j];
+      if (lows[j] < ll) ll = lows[j];
+    }
+    const span = hh - ll === 0 ? 1 : hh - ll;
+    var1aArr.push((hh - closes[i]) / span * 100 - 90);
+    var3aArr.push((closes[i] - ll) / span * 100);
+  }
+
+  // VAR2A = smaCN(VAR1A, N, 1) + 100
+  const var2aRaw = smaCN(var1aArr, n, 1);
+  const var2a = var2aRaw.map(v => v + 100);
+
+  // VAR4A = smaCN(VAR3A, M, 1)
+  const var4a = smaCN(var3aArr, m, 1);
+
+  // VAR5A = smaCN(VAR4A, M, 1) + 100
+  const var5aRaw = smaCN(var4a, m, 1);
+  const var5a = var5aRaw.map(v => v + 100);
+
+  // VAR6A = VAR5A - VAR2A, 砖型图 = max(VAR6A - 4, 0)
+  const minLen = Math.min(var2a.length, var5a.length);
+  if (minLen < 3) return { brick: null, brickPrev: null, brickPrev2: null };
+
+  const offset = var2a.length - minLen;
+  const last = minLen - 1;
+
+  const brickAt = (i) => {
+    const v = var5a[i] - var2a[offset + i];
+    return v > 4 ? v - 4 : 0;
+  };
+
+  return {
+    brick: brickAt(last),
+    brickPrev: brickAt(last - 1),
+    brickPrev2: brickAt(last - 2),
+  };
 }

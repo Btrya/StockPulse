@@ -39,6 +39,10 @@ export default async function handler(req, res) {
     const excludeBoards = req.query.excludeBoards ? req.query.excludeBoards.split(',').filter(Boolean) : [];
     // 概念过滤（逗号分隔，OR 逻辑）
     const concepts = req.query.concepts ? req.query.concepts.split(',').filter(Boolean) : [];
+    // 策略组合
+    const strategies = req.query.strategies ? req.query.strategies.split(',').filter(Boolean) : undefined;
+    const combinator = req.query.combinator || undefined;
+    const line = req.query.line || undefined;
 
     // 尝试从 Redis 读取扫描结果
     let data = null;
@@ -114,7 +118,7 @@ export default async function handler(req, res) {
       (a, b) => a.localeCompare(b, 'zh-CN')
     );
 
-    const filtered = filterResults(data, { jThreshold: j, tolerance, industries, excludeBoards, concepts });
+    const filtered = filterResults(data, { jThreshold: j, tolerance, industries, excludeBoards, concepts, strategies, combinator, line });
 
     filtered.sort((a, b) => {
       const va = a[sort] ?? 0;
