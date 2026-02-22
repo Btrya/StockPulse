@@ -196,6 +196,11 @@ export default async function handler(req, res) {
   }
 }
 
+// bulk 结果 → 前端兼容字段（前端依赖 idx/total 显示进度）
+function bulkCompat(result) {
+  return { idx: result.dateIdx || result.totalDates || 0, total: result.totalDates || 0, processed: result.dateIdx || 0 };
+}
+
 // ── 批量模式处理 ──
 async function handleBulk(req, res, { date, klt, reset, rawDate, startTime, progress }) {
   const forceReset = reset === true;
@@ -217,8 +222,8 @@ async function handleBulk(req, res, { date, klt, reset, rawDate, startTime, prog
       done: false,
       needContinue: true,
       queue: progress.queue || [],
-      phase: progress.phase,
-      dateIdx: progress.dateIdx,
+      idx: progress.dateIdx || 0,
+      total: progress.tradingDates?.length || 0,
     });
   }
 
@@ -261,6 +266,7 @@ async function handleBulk(req, res, { date, klt, reset, rawDate, startTime, prog
 
       return res.json({
         ...result,
+        ...bulkCompat(result),
         needContinue: true,
         currentDate: next.date,
         queue,
@@ -287,6 +293,7 @@ async function handleBulk(req, res, { date, klt, reset, rawDate, startTime, prog
 
   return res.json({
     ...result,
+    ...bulkCompat(result),
     needContinue: !result.done,
     currentDate: date,
     queue: progress?.queue || [],
