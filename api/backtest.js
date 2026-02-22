@@ -1,20 +1,11 @@
 import { getStockList } from './_lib/tushare.js';
 import { screenStock } from './_lib/screener.js';
 import * as redis from './_lib/redis.js';
-import { KEY, TTL } from './_lib/constants.js';
+import { KEY, TTL, snapToFriday } from './_lib/constants.js';
 
 const SCREEN_TTL = { daily: TTL.SCREEN_RESULT_DAILY, weekly: TTL.SCREEN_RESULT_WEEKLY };
 
 const TIMEOUT_MS = 50000;
-
-// 将日期调整到该周的周五（周线数据以周五为基准）
-function snapToFriday(dateStr) {
-  const d = new Date(dateStr + 'T12:00:00Z');
-  const day = d.getUTCDay(); // 0=Sun, 5=Fri, 6=Sat
-  const diff = day === 0 ? -2 : day === 6 ? -1 : 5 - day;
-  d.setUTCDate(d.getUTCDate() + diff);
-  return d.toISOString().slice(0, 10);
-}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

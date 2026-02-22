@@ -1,15 +1,6 @@
 import * as redis from './_lib/redis.js';
-import { KEY, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS } from './_lib/constants.js';
+import { KEY, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS, snapToFriday } from './_lib/constants.js';
 import { filterResults } from './_lib/screener.js';
-
-// 与 backtest.js 保持一致
-function snapToFriday(dateStr) {
-  const d = new Date(dateStr + 'T12:00:00Z');
-  const day = d.getUTCDay();
-  const diff = day === 0 ? -2 : day === 6 ? -1 : 5 - day;
-  d.setUTCDate(d.getUTCDate() + diff);
-  return d.toISOString().slice(0, 10);
-}
 
 export default async function handler(req, res) {
   try {

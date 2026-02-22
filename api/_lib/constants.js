@@ -27,7 +27,7 @@ export const KEY = {
 // TTL (seconds)
 export const TTL = {
   STOCKS: 86400,              // 24h
-  SCREEN_RESULT_DAILY: 604800,  // 7d
+  SCREEN_RESULT_DAILY: 1209600, // 14d
   SCREEN_RESULT_WEEKLY: 2592000, // 30d
   PROGRESS: 21600,             // 6h
   CONCEPTS: 604800,            // 7d
@@ -81,5 +81,14 @@ export function getLastTradingDate(now = new Date()) {
   const day = d.getDay();
   if (day === 0) d.setDate(d.getDate() - 2);      // Sun → Fri
   else if (day === 6) d.setDate(d.getDate() - 1);  // Sat → Fri
+  return d.toISOString().slice(0, 10);
+}
+
+// 将日期对齐到该周周五（周线数据以周五为基准）
+export function snapToFriday(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00Z');
+  const day = d.getUTCDay(); // 0=Sun, 5=Fri, 6=Sat
+  const diff = day === 0 ? -2 : day === 6 ? -1 : 5 - day;
+  d.setUTCDate(d.getUTCDate() + diff);
   return d.toISOString().slice(0, 10);
 }

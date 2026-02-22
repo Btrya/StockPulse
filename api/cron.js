@@ -1,7 +1,7 @@
 import { getStockList, batchGetKlines } from './_lib/tushare.js';
 import { screenStock } from './_lib/screener.js';
 import * as redis from './_lib/redis.js';
-import { KEY, TTL, getCNDate, isWeekend, getLastTradingDate } from './_lib/constants.js';
+import { KEY, TTL, getCNDate, isWeekend, getLastTradingDate, snapToFriday } from './_lib/constants.js';
 
 const TIMEOUT_MS = 50000;
 
@@ -103,18 +103,25 @@ export default async function handler(req, res) {
     progress.idx = idx;
     progress.currentKlt = klt;
 
+    const done = idx >= stocks.length;
+
     // 如果当前 klt 扫描完成
-    if (idx >= stocks.length) {
+    if (done) {
       const screenTTL = klt === 'daily' ? TTL.SCREEN_RESULT_DAILY : TTL.SCREEN_RESULT_WEEKLY;
-      await redis.set(KEY.screenResult(today, klt), hits, screenTTL);
+      // 周线结果以该周周五日期为 key，日线用当天日期
+      const storeDate = klt === 'weekly' ? snapToFriday(today) : today;
+      await redis.set(KEY.screenResult(storeDate, klt), hits, screenTTL);
 
       // 追加日期到 scan:dates（跳过周末，避免污染追踪数据）
       if (!isWeekend(today)) {
         const maxLen = klt === 'daily' ? 10 : 8;
         const dates = (await redis.get(KEY.scanDates(klt))) || [];
-        if (dates[0] !== today) dates.unshift(today);
-        if (dates.length > maxLen) dates.length = maxLen;
-        await redis.set(KEY.scanDates(klt), dates, screenTTL);
+        // 周线用周五日期，日线用当天；周线同一周覆盖（先移除旧条目再插入）
+        const dateKey = storeDate;
+        const filtered = dates.filter(d => d !== dateKey);
+        filtered.unshift(dateKey);
+        if (filtered.length > maxLen) filtered.length = maxLen;
+        await redis.set(KEY.scanDates(klt), filtered, screenTTL);
       }
 
       if (klt === 'daily') {
@@ -132,6 +139,16 @@ export default async function handler(req, res) {
     await redis.set(KEY.PROGRESS, progress, TTL.PROGRESS);
     await redis.set(KEY.META, { lastDate: today, lastTime: new Date().toISOString() });
 
+    // 自调用链：扫描未完成时 fire-and-forget 调用自己，不依赖定时器的多次触发
+    const hasMore = !done || (klt === 'daily');
+    if (hasMore) {
+      const proto = req.headers['x-forwarded-proto'] || 'https';
+      const selfUrl = `${proto}://${req.headers.host}/api/cron`;
+      const headers = { 'Content-Type': 'application/json' };
+      if (process.env.CRON_SECRET) headers['Authorization'] = `Bearer ${process.env.CRON_SECRET}`;
+      fetch(selfUrl, { method: 'GET', headers }).catch(() => {});
+    }
+
     return res.json({
       processed,
       total: stocks.length,
@@ -139,7 +156,7 @@ export default async function handler(req, res) {
       klt,
       hits: hits.length,
       elapsed: Date.now() - startTime,
-      done: idx >= stocks.length,
+      done,
     });
   } catch (err) {
     console.error('cron error:', err);
