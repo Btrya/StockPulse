@@ -56,6 +56,13 @@ export const STRATEGIES = {
       return r.close > r.shortTrend;
     },
   },
+  consecutiveLimitUp: {
+    id: 'consecutiveLimitUp',
+    name: '二连板',
+    desc: '连续两个交易日涨停',
+    paramKeys: [],
+    test: (r) => !!(r.limitUp && r.limitUpPrev),
+  },
 };
 
 // 默认启用的策略（保持现有行为：J值低位 AND 触碰趋势线）
@@ -118,6 +125,18 @@ export function screenStock(stock, opts = {}) {
   const code = symbol || ts_code.split('.')[0];
   const board = getMarketBoard(code);
 
+  // 涨停判定：根据板块确定涨停幅度
+  const limitPct = (board === 'gem' || board === 'star') ? 20
+    : board === 'bse' ? 30 : 10;
+  const len = closes.length;
+  const isLimitUp = (i) => {
+    if (i < 1) return false;
+    const pct = (closes[i] - closes[i - 1]) / closes[i - 1] * 100;
+    return pct >= limitPct - 0.5; // 0.5% 容差，四舍五入导致的微小偏差
+  };
+  const limitUp = isLimitUp(len - 1);
+  const limitUpPrev = isLimitUp(len - 2);
+
   return {
     code,
     ts_code,
@@ -139,6 +158,8 @@ export function screenStock(stock, opts = {}) {
     brick: brick != null ? round2(brick) : null,
     brickPrev: brickPrev != null ? round2(brickPrev) : null,
     brickPrev2: brickPrev2 != null ? round2(brickPrev2) : null,
+    limitUp,
+    limitUpPrev,
   };
 }
 

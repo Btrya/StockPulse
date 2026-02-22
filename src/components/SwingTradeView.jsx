@@ -11,7 +11,10 @@ export default function SwingTradeView({
 }) {
   const subItems = [
     { key: 'brickReversal', label: '砖型反转' },
+    { key: 'consecutiveLimitUp', label: '二连板' },
   ];
+
+  const showLineSelector = subTab === 'brickReversal';
 
   return (
     <div>
@@ -22,20 +25,22 @@ export default function SwingTradeView({
         size="small"
         className="mb-4"
         tabBarExtraContent={
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-400">收盘价在</span>
-            <Radio.Group
-              value={line}
-              onChange={e => setLine(e.target.value)}
-              optionType="button"
-              buttonStyle="solid"
-              size="small"
-              options={[
-                { label: '短期线上方', value: 'short' },
-                { label: '多空线上方', value: 'bull' },
-              ]}
-            />
-          </div>
+          showLineSelector ? (
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-slate-400">收盘价在</span>
+              <Radio.Group
+                value={line}
+                onChange={e => setLine(e.target.value)}
+                optionType="button"
+                buttonStyle="solid"
+                size="small"
+                options={[
+                  { label: '短期线上方', value: 'short' },
+                  { label: '多空线上方', value: 'bull' },
+                ]}
+              />
+            </div>
+          ) : null
         }
       />
 

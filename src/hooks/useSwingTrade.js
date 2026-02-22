@@ -7,6 +7,10 @@ const PRESETS = {
     strategies: ['brickReversal', 'shortAboveBull', 'priceAboveLine'],
     combinator: 'AND',
   },
+  consecutiveLimitUp: {
+    strategies: ['consecutiveLimitUp'],
+    combinator: 'AND',
+  },
 };
 
 export default function useSwingTrade() {
