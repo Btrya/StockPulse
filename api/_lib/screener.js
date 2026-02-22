@@ -33,7 +33,7 @@ export const STRATEGIES = {
 };
 
 // 默认启用的策略（保持现有行为：J值低位 AND 触碰趋势线）
-export const DEFAULT_STRATEGIES = ['lowJ', 'nearLine'];
+export const DEFAULT_STRATEGIES = ['lowJ', 'nearLine', 'shortAboveBull'];
 
 // ── 指标计算（不变） ──────────────────────────────────────
 
