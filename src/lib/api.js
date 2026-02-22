@@ -9,6 +9,7 @@ async function request(path, opts = {}) {
 
 export function fetchResults(params) {
   const qs = new URLSearchParams();
+  if (params.date) qs.set('date', params.date);
   if (params.klt) qs.set('klt', params.klt);
   if (params.j != null) qs.set('j', String(params.j));
   if (params.tolerance != null) qs.set('tolerance', String(params.tolerance));
@@ -43,6 +44,7 @@ export function fetchStatus() {
 
 export function fetchTracking(params) {
   const qs = new URLSearchParams();
+  if (params.date) qs.set('date', params.date);
   if (params.klt) qs.set('klt', params.klt);
   if (params.minDays != null) qs.set('minDays', String(params.minDays));
   if (params.j != null) qs.set('j', String(params.j));

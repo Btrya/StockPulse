@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { fetchResults } from '../lib/api';
+import { getLastTradingDate } from '../lib/date';
 
 const DEFAULTS = { klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [] };
 
@@ -30,15 +31,16 @@ function writeURL(params) {
 
 export default function useScreener() {
   const [params, setParams] = useState(readURL);
+  const [date, setDate] = useState(getLastTradingDate);
   const [results, setResults] = useState([]);
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(false);
   const initDone = useRef(false);
 
-  const query = useCallback(async (p) => {
+  const query = useCallback(async (p, d) => {
     setLoading(true);
     try {
-      const res = await fetchResults(p);
+      const res = await fetchResults({ ...p, date: d });
       setResults(res.data || []);
       setMeta(res.meta || null);
     } catch (err) {
@@ -59,13 +61,13 @@ export default function useScreener() {
   useEffect(() => {
     if (!initDone.current) {
       initDone.current = true;
-      query(readURL());
+      query(readURL(), date);
     }
-  }, [query]);
+  }, [query, date]);
 
   const scan = useCallback(() => {
-    query(params);
-  }, [params, query]);
+    query(params, date);
+  }, [params, date, query]);
 
-  return { params, setParams, results, meta, loading, scan };
+  return { params, setParams, date, setDate, results, meta, loading, scan };
 }

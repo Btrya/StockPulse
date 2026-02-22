@@ -1,11 +1,21 @@
-import { Tabs, Radio, Spin, Empty, Alert, Tag } from 'antd';
+import { Tabs, Radio, Spin, Empty, Alert, Tag, DatePicker, Checkbox } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import ResultTable from './ResultTable';
 import ResultCard from './ResultCard';
+import { getLastTradingDate } from '../lib/date';
+import dayjs from 'dayjs';
+
+const BOARD_OPTIONS = [
+  { label: '创业板', value: 'gem' },
+  { label: '科创板', value: 'star' },
+  { label: '北交所', value: 'bse' },
+];
 
 export default function SwingTradeView({
   subTab, setSubTab,
   line, setLine,
+  date, setDate,
+  excludeBoards, setExcludeBoards,
   results, meta, loading,
   refresh, hotData,
 }) {
@@ -25,22 +35,38 @@ export default function SwingTradeView({
         size="small"
         className="mb-4"
         tabBarExtraContent={
-          showLineSelector ? (
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-slate-400">收盘价在</span>
-              <Radio.Group
-                value={line}
-                onChange={e => setLine(e.target.value)}
-                optionType="button"
-                buttonStyle="solid"
-                size="small"
-                options={[
-                  { label: '短期线上方', value: 'short' },
-                  { label: '多空线上方', value: 'bull' },
-                ]}
-              />
-            </div>
-          ) : null
+          <div className="flex items-center gap-3">
+            <DatePicker
+              value={dayjs(date)}
+              onChange={v => setDate(v ? v.format('YYYY-MM-DD') : getLastTradingDate())}
+              allowClear={false}
+              size="small"
+              style={{ width: 120 }}
+            />
+            <span className="text-xs text-slate-400">排除</span>
+            <Checkbox.Group
+              options={BOARD_OPTIONS}
+              value={excludeBoards}
+              onChange={setExcludeBoards}
+              className="text-xs"
+            />
+            {showLineSelector && (
+              <>
+                <span className="text-xs text-slate-400">收盘价在</span>
+                <Radio.Group
+                  value={line}
+                  onChange={e => setLine(e.target.value)}
+                  optionType="button"
+                  buttonStyle="solid"
+                  size="small"
+                  options={[
+                    { label: '短期线上方', value: 'short' },
+                    { label: '多空线上方', value: 'bull' },
+                  ]}
+                />
+              </>
+            )}
+          </div>
         }
       />
 

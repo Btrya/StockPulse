@@ -40,6 +40,8 @@ export default function App() {
           <ParamPanel
             params={screener.params}
             setParams={screener.setParams}
+            date={screener.date}
+            setDate={screener.setDate}
             industries={screener.meta?.industries}
             concepts={screener.meta?.concepts}
             onSearch={screener.scan}
@@ -57,6 +59,8 @@ export default function App() {
         <TrackingView
           params={tracking.params}
           setParams={tracking.setParams}
+          date={tracking.date}
+          setDate={tracking.setDate}
           results={tracking.results}
           meta={tracking.meta}
           loading={tracking.loading}
@@ -100,6 +104,10 @@ export default function App() {
           setSubTab={swingTrade.setSubTab}
           line={swingTrade.line}
           setLine={swingTrade.setLine}
+          date={swingTrade.date}
+          setDate={swingTrade.setDate}
+          excludeBoards={swingTrade.excludeBoards}
+          setExcludeBoards={swingTrade.setExcludeBoards}
           results={swingTrade.results}
           meta={swingTrade.meta}
           loading={swingTrade.loading}

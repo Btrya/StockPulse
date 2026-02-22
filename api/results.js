@@ -47,24 +47,31 @@ export default async function handler(req, res) {
     // 尝试从 Redis 读取扫描结果
     let data = null;
     let scanDate = null;
+    const reqDate = req.query.date || null; // 用户指定日期
 
     if (redis.isConfigured()) {
-      const now = new Date();
-      const today = getCNDate(now);
-      const closed = isMarketClosed(now);
-
       try {
-        if (closed) {
-          // 收盘后：优先今天，降级往前找
-          data = await redis.get(KEY.screenResult(today, klt));
-          scanDate = today;
-        }
-        if (!data) {
-          // 收盘前 or 今天没数据：往前找最近的交易日数据（跨周末/节假日）
-          for (let i = 1; i <= 5; i++) {
-            const d = getCNDate(new Date(now.getTime() - i * 86400000));
-            data = await redis.get(KEY.screenResult(d, klt));
-            if (data) { scanDate = d; break; }
+        if (reqDate) {
+          // 指定日期：直接读取，不自动探测
+          data = await redis.get(KEY.screenResult(reqDate, klt));
+          scanDate = reqDate;
+        } else {
+          const now = new Date();
+          const today = getCNDate(now);
+          const closed = isMarketClosed(now);
+
+          if (closed) {
+            // 收盘后：优先今天，降级往前找
+            data = await redis.get(KEY.screenResult(today, klt));
+            scanDate = today;
+          }
+          if (!data) {
+            // 收盘前 or 今天没数据：往前找最近的交易日数据（跨周末/节假日）
+            for (let i = 1; i <= 5; i++) {
+              const d = getCNDate(new Date(now.getTime() - i * 86400000));
+              data = await redis.get(KEY.screenResult(d, klt));
+              if (data) { scanDate = d; break; }
+            }
           }
         }
       } catch (redisErr) {

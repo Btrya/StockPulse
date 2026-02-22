@@ -11,6 +11,7 @@ export default async function handler(req, res) {
     const industries = req.query.industries ? req.query.industries.split(',').filter(Boolean) : [];
     const excludeBoards = req.query.excludeBoards ? req.query.excludeBoards.split(',').filter(Boolean) : [];
     const concepts = req.query.concepts ? req.query.concepts.split(',').filter(Boolean) : [];
+    const reqDate = req.query.date || null; // 用户指定日期（锚定追踪窗口）
 
     if (!redis.isConfigured()) {
       return res.json({ data: [], meta: { error: 'Redis 未配置' } });
@@ -21,12 +22,17 @@ export default async function handler(req, res) {
     // 读取 scan:dates，过滤周末，不足 window 条则探测 Redis key 补充
     let scanDates = await redis.get(KEY.scanDates(klt));
     if (scanDates) scanDates = scanDates.filter(d => !isWeekend(d));
+    // 如果指定了日期，截取该日期及之前的数据
+    if (reqDate && scanDates) {
+      scanDates = scanDates.filter(d => d <= reqDate);
+    }
+    const anchorTime = reqDate ? new Date(reqDate + 'T23:59:59+08:00').getTime() : Date.now();
     if (!scanDates || scanDates.length < window) {
       const existing = new Set(scanDates || []);
       // 日线探 15 天（跨周末），周线探 40 天（跨月）
       const probeRange = klt === 'weekly' ? 40 : 15;
       for (let i = 0; i < probeRange; i++) {
-        const d = getCNDate(new Date(Date.now() - i * 86400000));
+        const d = getCNDate(new Date(anchorTime - i * 86400000));
         if (existing.has(d) || isWeekend(d)) continue;
         const data = await redis.get(KEY.screenResult(d, klt));
         if (data) existing.add(d);

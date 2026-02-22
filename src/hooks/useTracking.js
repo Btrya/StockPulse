@@ -1,19 +1,21 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { fetchTracking } from '../lib/api';
+import { getLastTradingDate } from '../lib/date';
 
 const DEFAULTS = { klt: 'daily', minDays: 2, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [] };
 
 export default function useTracking() {
   const [params, setParams] = useState(DEFAULTS);
+  const [date, setDate] = useState(getLastTradingDate);
   const [results, setResults] = useState([]);
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(false);
   const initDone = useRef(false);
 
-  const query = useCallback(async (p) => {
+  const query = useCallback(async (p, d) => {
     setLoading(true);
     try {
-      const res = await fetchTracking(p);
+      const res = await fetchTracking({ ...p, date: d });
       setResults(res.data || []);
       setMeta(res.meta || null);
     } catch (err) {
@@ -29,13 +31,13 @@ export default function useTracking() {
   const activate = useCallback(() => {
     if (!initDone.current) {
       initDone.current = true;
-      query(params);
+      query(params, date);
     }
-  }, [params, query]);
+  }, [params, date, query]);
 
   const refresh = useCallback(() => {
-    query(params);
-  }, [params, query]);
+    query(params, date);
+  }, [params, date, query]);
 
-  return { params, setParams, results, meta, loading, refresh, activate };
+  return { params, setParams, date, setDate, results, meta, loading, refresh, activate };
 }

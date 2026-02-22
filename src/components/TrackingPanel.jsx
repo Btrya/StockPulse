@@ -1,6 +1,8 @@
-import { Select, InputNumber, Radio, Button, Space, Card, Checkbox } from 'antd';
+import { Select, InputNumber, Radio, Button, Space, Card, Checkbox, DatePicker } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import { buildHotOptions } from '../hooks/useHotData';
+import { getLastTradingDate } from '../lib/date';
+import dayjs from 'dayjs';
 
 const KLT_OPTIONS = [
   { label: '日线', value: 'daily' },
@@ -20,7 +22,7 @@ const MIN_DAYS_OPTIONS = [
   { label: '5+', value: 5 },
 ];
 
-export default function TrackingPanel({ params, setParams, industries, concepts, onSearch, loading, hotData }) {
+export default function TrackingPanel({ params, setParams, date, setDate, industries, concepts, onSearch, loading, hotData }) {
   const update = (key, val) => setParams(prev => ({ ...prev, [key]: val }));
 
   const industryOptions = buildHotOptions(industries, hotData?.hotIndustries);
@@ -71,6 +73,17 @@ export default function TrackingPanel({ params, setParams, industries, concepts,
         </div>
 
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-end flex-wrap">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-slate-400">数据日期</span>
+            <DatePicker
+              value={dayjs(date)}
+              onChange={v => setDate(v ? v.format('YYYY-MM-DD') : getLastTradingDate())}
+              allowClear={false}
+              size="middle"
+              style={{ width: 130 }}
+            />
+          </div>
+
           <div className="flex flex-col gap-1">
             <span className="text-xs text-slate-400">K线周期</span>
             <Radio.Group
@@ -128,7 +141,7 @@ export default function TrackingPanel({ params, setParams, industries, concepts,
             </Button>
             <Button
               icon={<ReloadOutlined />}
-              onClick={() => setParams({ klt: 'daily', minDays: 2, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [] })}
+              onClick={() => { setParams({ klt: 'daily', minDays: 2, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [] }); setDate(getLastTradingDate()); }}
             >
               重置
             </Button>
