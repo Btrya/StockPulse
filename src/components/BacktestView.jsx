@@ -1,8 +1,9 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { Spin, Empty, Alert, message } from 'antd';
 import BacktestPanel from './BacktestPanel';
 import ResultTable from './ResultTable';
 import ResultCard from './ResultCard';
+import ExportBar from './ExportBar';
 
 export default function BacktestView({
   params, setParams,
@@ -15,6 +16,7 @@ export default function BacktestView({
 }) {
   useEffect(() => cleanup, [cleanup]);
   const [stockFilter, setStockFilter] = useState('');
+  const tableRef = useRef(null);
 
   const handleStartBacktest = async () => {
     const res = await startBacktest(date, params.klt, false);
@@ -35,6 +37,8 @@ export default function BacktestView({
   // 结果筛选器：用回测结果的行业/概念列表，fallback 到共享列表
   const resultIndustries = meta?.industries?.length ? meta.industries : (sharedIndustries || []);
   const resultConcepts = meta?.concepts?.length ? meta.concepts : (sharedConcepts || []);
+
+  const filename = `回测-${meta?.scanDate || date || new Date().toISOString().slice(0, 10)}`;
 
   return (
     <div>
@@ -72,19 +76,22 @@ export default function BacktestView({
                 共 {meta.total} 只符合条件
                 {meta.wideTotal ? ` (全量 ${meta.wideTotal} 只)` : ''}
                 {stockFilter.trim() ? ` → 搜索到 ${displayResults.length} 只` : ''}
+                <ExportBar data={displayResults} tableRef={tableRef} filename={filename} />
               </span>
               {meta.scanDate && <span>回测日期: {meta.scanDate}</span>}
             </div>
           )}
 
-          <div className="hidden md:block">
-            <ResultTable data={displayResults} hotData={hotData} />
-          </div>
+          <div ref={tableRef}>
+            <div className="hidden md:block">
+              <ResultTable data={displayResults} hotData={hotData} />
+            </div>
 
-          <div className="md:hidden flex flex-col gap-3">
-            {displayResults.map(item => (
-              <ResultCard key={item.code} item={item} hotData={hotData} />
-            ))}
+            <div className="md:hidden flex flex-col gap-3">
+              {displayResults.map(item => (
+                <ResultCard key={item.code} item={item} hotData={hotData} />
+              ))}
+            </div>
           </div>
         </div>
       ) : scanning ? (

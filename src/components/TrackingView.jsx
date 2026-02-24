@@ -1,12 +1,18 @@
+import { useRef } from 'react';
 import { Spin, Empty, Alert } from 'antd';
 import TrackingPanel from './TrackingPanel';
 import TrackingTable from './TrackingTable';
 import TrackingCard from './TrackingCard';
+import ExportBar from './ExportBar';
 
 export default function TrackingView({ params, setParams, date, setDate, results, meta, loading, refresh, sharedIndustries, sharedConcepts, hotData }) {
+  const tableRef = useRef(null);
+
   // 追踪结果有行业/概念就用，否则 fallback 到 screener 共享的列表
   const panelIndustries = meta?.industries?.length ? meta.industries : (sharedIndustries || []);
   const panelConcepts = meta?.concepts?.length ? meta.concepts : (sharedConcepts || []);
+
+  const filename = `追踪-${meta?.scanDates?.[0] || new Date().toISOString().slice(0, 10)}`;
 
   return (
     <div>
@@ -42,21 +48,26 @@ export default function TrackingView({ params, setParams, date, setDate, results
         <div>
           {meta && (
             <div className="flex items-center justify-between mb-3 text-xs text-slate-400">
-              <span>共 {results.length} 只连续入选</span>
+              <span>
+                共 {results.length} 只连续入选
+                <ExportBar data={results} tableRef={tableRef} filename={filename} />
+              </span>
               {meta.scanDates && (
                 <span>覆盖日期: {meta.scanDates.join(', ')}</span>
               )}
             </div>
           )}
 
-          <div className="hidden md:block">
-            <TrackingTable data={results} hotData={hotData} />
-          </div>
+          <div ref={tableRef}>
+            <div className="hidden md:block">
+              <TrackingTable data={results} hotData={hotData} />
+            </div>
 
-          <div className="md:hidden flex flex-col gap-3">
-            {results.map(item => (
-              <TrackingCard key={item.ts_code} item={item} hotData={hotData} />
-            ))}
+            <div className="md:hidden flex flex-col gap-3">
+              {results.map(item => (
+                <TrackingCard key={item.ts_code} item={item} hotData={hotData} />
+              ))}
+            </div>
           </div>
         </div>
       )}

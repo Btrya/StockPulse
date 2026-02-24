@@ -1,8 +1,12 @@
+import { useRef } from 'react';
 import { Spin, Empty, Alert } from 'antd';
 import ResultTable from './ResultTable';
 import ResultCard from './ResultCard';
+import ExportBar from './ExportBar';
 
 export default function ResultList({ results, meta, loading, hotData }) {
+  const tableRef = useRef(null);
+
   if (loading) {
     return (
       <div className="text-center py-16">
@@ -31,6 +35,8 @@ export default function ResultList({ results, meta, loading, hotData }) {
     );
   }
 
+  const filename = `筛选-${meta?.scanDate || new Date().toISOString().slice(0, 10)}`;
+
   return (
     <div>
       {meta && (
@@ -38,19 +44,22 @@ export default function ResultList({ results, meta, loading, hotData }) {
           <span>
             共 {meta.total} 只符合条件
             {meta.wideTotal ? ` (宽阈值 ${meta.wideTotal} 只)` : ''}
+            <ExportBar data={results} tableRef={tableRef} filename={filename} />
           </span>
           {meta.scanDate && <span>数据日期: {meta.scanDate}</span>}
         </div>
       )}
 
-      <div className="hidden md:block">
-        <ResultTable data={results} hotData={hotData} />
-      </div>
+      <div ref={tableRef}>
+        <div className="hidden md:block">
+          <ResultTable data={results} hotData={hotData} />
+        </div>
 
-      <div className="md:hidden flex flex-col gap-3">
-        {results.map(item => (
-          <ResultCard key={item.code} item={item} hotData={hotData} />
-        ))}
+        <div className="md:hidden flex flex-col gap-3">
+          {results.map(item => (
+            <ResultCard key={item.code} item={item} hotData={hotData} />
+          ))}
+        </div>
       </div>
     </div>
   );
