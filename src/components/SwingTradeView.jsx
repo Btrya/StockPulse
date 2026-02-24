@@ -1,4 +1,3 @@
-import { useRef } from 'react';
 import { Tabs, Radio, Spin, Empty, Alert, DatePicker, Checkbox, InputNumber, Switch } from 'antd';
 import ResultTable from './ResultTable';
 import ResultCard from './ResultCard';
@@ -26,8 +25,6 @@ export default function SwingTradeView({
   results, rawTotal, meta, loading,
   hotData,
 }) {
-  const tableRef = useRef(null);
-
   const subItems = [
     { key: 'brickReversal', label: '砖型反转' },
     { key: 'consecutiveLimitUp', label: '连板' },
@@ -164,21 +161,19 @@ export default function SwingTradeView({
               <span>
                 共 {results.length} 只符合条件
                 {isBrick && rawTotal != null ? ` (反转信号 ${rawTotal} 只)` : meta.wideTotal ? ` (全量 ${meta.wideTotal} 只)` : ''}
-                <ExportBar data={results} tableRef={tableRef} filename={filename} />
+                <ExportBar data={results} filename={filename} />
               </span>
               {meta.scanDate && <span>数据日期: {meta.scanDate}</span>}
             </div>
           )}
 
-          <div ref={tableRef}>
-            <div className="hidden md:block">
-              <ResultTable data={results} hotData={hotData} subTab={subTab} />
-            </div>
-            <div className="md:hidden flex flex-col gap-3">
-              {results.map(item => (
-                <ResultCard key={item.code} item={item} hotData={hotData} subTab={subTab} />
-              ))}
-            </div>
+          <div className="hidden md:block">
+            <ResultTable data={results} hotData={hotData} subTab={subTab} />
+          </div>
+          <div className="md:hidden flex flex-col gap-3">
+            {results.map(item => (
+              <ResultCard key={item.code} item={item} hotData={hotData} subTab={subTab} />
+            ))}
           </div>
         </div>
       ) : (
