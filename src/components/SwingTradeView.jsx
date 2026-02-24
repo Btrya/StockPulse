@@ -41,26 +41,25 @@ export default function SwingTradeView({
         onChange={setSubTab}
         items={subItems}
         size="small"
-        className="mb-4"
-        tabBarExtraContent={
-          <div className="flex items-center gap-3">
-            <DatePicker
-              value={dayjs(date)}
-              onChange={v => setDate(v ? v.format('YYYY-MM-DD') : getLastTradingDate())}
-              allowClear={false}
-              size="small"
-              style={{ width: 120 }}
-            />
-            <span className="text-xs text-slate-400">排除</span>
-            <Checkbox.Group
-              options={BOARD_OPTIONS}
-              value={excludeBoards}
-              onChange={setExcludeBoards}
-              className="text-xs"
-            />
-          </div>
-        }
+        className="mb-2"
       />
+
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <DatePicker
+          value={dayjs(date)}
+          onChange={v => setDate(v ? v.format('YYYY-MM-DD') : getLastTradingDate())}
+          allowClear={false}
+          size="small"
+          style={{ width: 120 }}
+        />
+        <span className="text-xs text-slate-400">排除</span>
+        <Checkbox.Group
+          options={BOARD_OPTIONS}
+          value={excludeBoards}
+          onChange={setExcludeBoards}
+          className="text-xs"
+        />
+      </div>
 
       {isBrick && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4 px-3 py-2.5 rounded-lg bg-slate-800/50 border border-slate-700/50 text-xs">
