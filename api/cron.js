@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     // ── 批量模式：按日期拉全市场 ──
     if (TUSHARE_BULK) {
       const result = await bulkScan({ today, startTime });
-      if (!result.done) {
+      if (!result.done && result.phase !== 'waiting') {
         const proto = req.headers['x-forwarded-proto'] || 'https';
         const selfUrl = `${proto}://${req.headers.host}/api/cron`;
         const headers = { 'Content-Type': 'application/json' };

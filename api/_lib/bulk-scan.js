@@ -81,6 +81,17 @@ export async function bulkScan({
     } else {
       tradingDates = await getTradingDates(today, lookbackBars);
     }
+    // 检查 tushare 是否已有 today 的数据（日线：最新交易日须 === today）
+    // 周线不检查：周线按周聚合，当周五还没到也正常
+    if (klt === 'daily' && progressKey === KEY.BULK_PROGRESS) {
+      const todayFmt = today.replace(/-/g, '');
+      const latestDate = tradingDates[tradingDates.length - 1];
+      if (latestDate !== todayFmt) {
+        // tushare 尚未发布今天的数据，放弃本轮，等下次 cron 重试
+        return { done: false, klt, phase: 'waiting', reason: `tushare latest=${latestDate}, today=${todayFmt}`, elapsed: Date.now() - startTime };
+      }
+    }
+
     progress.tradingDates = tradingDates;
     await redis.set(progressKey, progress, TTL.PROGRESS);
   }
