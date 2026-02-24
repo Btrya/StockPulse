@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Select, InputNumber, Radio, Button, Space, Card, Checkbox, DatePicker, message } from 'antd';
+import { Select, InputNumber, Radio, Button, Space, Card, Checkbox, DatePicker, Switch, message } from 'antd';
 import { SearchOutlined, ReloadOutlined, TagsOutlined } from '@ant-design/icons';
 import { buildConcepts } from '../lib/api';
 import { buildHotOptions } from '../hooks/useHotData';
@@ -132,6 +132,16 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             />
           </div>
 
+          {params.klt === 'daily' && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">周线多头</span>
+              <Switch
+                checked={params.weeklyBull}
+                onChange={v => update('weeklyBull', v)}
+              />
+            </div>
+          )}
+
           <Space>
             <Button
               type="primary"
@@ -143,7 +153,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </Button>
             <Button
               icon={<ReloadOutlined />}
-              onClick={() => { setParams({ klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [] }); setDate(getLastTradingDate()); }}
+              onClick={() => { setParams({ klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false }); setDate(getLastTradingDate()); }}
             >
               重置
             </Button>

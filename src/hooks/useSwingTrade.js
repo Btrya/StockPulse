@@ -27,6 +27,7 @@ export default function useSwingTrade() {
   const [nearLine, setNearLine] = useState(false);    // 触碰趋势线
   const [redGtGreen, setRedGtGreen] = useState(false); // 红砖 > 绿砖
   const [upperLeBody, setUpperLeBody] = useState(false); // 上影线≤实体
+  const [weeklyBull, setWeeklyBull] = useState(false);   // 周线多头趋势
 
   const [rawResults, setRawResults] = useState([]);   // 后端原始结果
   const [meta, setMeta] = useState(null);
@@ -93,9 +94,11 @@ export default function useSwingTrade() {
       if (redGtGreen && !(r.brick > r.brickPrev2)) return false;
       // 上影线≤实体
       if (upperLeBody && !(r.body > 0 && r.upperShadow <= r.body)) return false;
+      // 周线多头趋势
+      if (weeklyBull && r.weeklyBull !== true) return false;
       return true;
     });
-  }, [rawResults, subTab, maxGain, maxJ, arrangement, nearLine, redGtGreen, upperLeBody]);
+  }, [rawResults, subTab, maxGain, maxJ, arrangement, nearLine, redGtGreen, upperLeBody, weeklyBull]);
 
   return {
     subTab, setSubTab,
@@ -109,6 +112,7 @@ export default function useSwingTrade() {
     nearLine, setNearLine,
     redGtGreen, setRedGtGreen,
     upperLeBody, setUpperLeBody,
+    weeklyBull, setWeeklyBull,
     results, rawResults, meta, loading,
     refresh,
   };

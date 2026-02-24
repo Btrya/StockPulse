@@ -1,5 +1,5 @@
 import * as redis from './_lib/redis.js';
-import { KEY, TTL, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS, getCNDate, isMarketClosed } from './_lib/constants.js';
+import { KEY, TTL, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS, getCNDate, isMarketClosed, snapToFriday } from './_lib/constants.js';
 import { filterResults } from './_lib/screener.js';
 
 // 获取行业列表（优先 Redis 缓存，fallback Tushare）
@@ -86,6 +86,21 @@ export default async function handler(req, res) {
         if (conceptsMap) {
           for (const r of data) {
             r.concepts = conceptsMap[r.ts_code] || [];
+          }
+        }
+      } catch {}
+    }
+
+    // 日线模式下附加周线多头字段
+    if (data && data.length && klt === 'daily' && redis.isConfigured()) {
+      try {
+        const friday = snapToFriday(scanDate);
+        const weeklyData = await redis.get(KEY.screenResult(friday, 'weekly'));
+        if (weeklyData && weeklyData.length) {
+          const weeklyMap = new Map(weeklyData.map(w => [w.ts_code, w]));
+          for (const r of data) {
+            const w = weeklyMap.get(r.ts_code);
+            r.weeklyBull = w ? w.shortTrend > w.bullBear : null;
           }
         }
       } catch {}

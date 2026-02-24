@@ -102,8 +102,6 @@ export default function App() {
         <SwingTradeView
           subTab={swingTrade.subTab}
           setSubTab={swingTrade.setSubTab}
-          line={swingTrade.line}
-          setLine={swingTrade.setLine}
           date={swingTrade.date}
           setDate={swingTrade.setDate}
           excludeBoards={swingTrade.excludeBoards}
@@ -120,11 +118,12 @@ export default function App() {
           setRedGtGreen={swingTrade.setRedGtGreen}
           upperLeBody={swingTrade.upperLeBody}
           setUpperLeBody={swingTrade.setUpperLeBody}
+          weeklyBull={swingTrade.weeklyBull}
+          setWeeklyBull={swingTrade.setWeeklyBull}
           results={swingTrade.results}
           rawTotal={swingTrade.rawResults.length}
           meta={swingTrade.meta}
           loading={swingTrade.loading}
-          refresh={swingTrade.refresh}
           hotData={hotData}
         />
       ),

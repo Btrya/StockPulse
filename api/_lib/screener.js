@@ -63,6 +63,13 @@ export const STRATEGIES = {
     paramKeys: [],
     test: (r) => r.consecutiveCount >= 2,
   },
+  weeklyBull: {
+    id: 'weeklyBull',
+    name: '周线多头趋势',
+    desc: '周线短期趋势线 > 多空分界线（仅日线可用）',
+    paramKeys: [],
+    test: (r) => r.weeklyBull === true,
+  },
 };
 
 // 默认启用的策略（保持现有行为：J值低位 AND 触碰趋势线）

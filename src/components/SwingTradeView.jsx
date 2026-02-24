@@ -1,4 +1,4 @@
-import { Tabs, Radio, Spin, Empty, Alert, Tag, DatePicker, Checkbox, InputNumber, Switch } from 'antd';
+import { Tabs, Radio, Spin, Empty, Alert, DatePicker, Checkbox, InputNumber, Switch } from 'antd';
 import ResultTable from './ResultTable';
 import ResultCard from './ResultCard';
 import { getLastTradingDate } from '../lib/date';
@@ -12,7 +12,6 @@ const BOARD_OPTIONS = [
 
 export default function SwingTradeView({
   subTab, setSubTab,
-  line, setLine,
   date, setDate,
   excludeBoards, setExcludeBoards,
   maxGain, setMaxGain,
@@ -21,8 +20,9 @@ export default function SwingTradeView({
   nearLine, setNearLine,
   redGtGreen, setRedGtGreen,
   upperLeBody, setUpperLeBody,
+  weeklyBull, setWeeklyBull,
   results, rawTotal, meta, loading,
-  refresh, hotData,
+  hotData,
 }) {
   const subItems = [
     { key: 'brickReversal', label: '砖型反转' },
@@ -131,6 +131,15 @@ export default function SwingTradeView({
               size="small"
             />
             <span className="text-slate-400">上影线&le;实体</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Switch
+              checked={weeklyBull}
+              onChange={setWeeklyBull}
+              size="small"
+            />
+            <span className="text-slate-400">周线多头</span>
           </div>
         </div>
       )}
