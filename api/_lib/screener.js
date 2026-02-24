@@ -95,9 +95,18 @@ export function screenStock(stock, opts = {}) {
     if (j >= jMax) return null;
   }
 
+  const opens = klines.map(k => k.open);
+  const todayOpen = opens[opens.length - 1];
   const todayLow = lows[lows.length - 1];
   const todayHigh = highs[highs.length - 1];
   const todayClose = closes[closes.length - 1];
+  const prevClose = closes[closes.length - 2];
+  const change = prevClose ? ((todayClose - prevClose) / prevClose) * 100 : 0;
+
+  // 影线与实体
+  const body = Math.abs(todayClose - todayOpen);
+  const upperShadow = todayHigh - Math.max(todayClose, todayOpen);
+  const lowerShadow = Math.min(todayClose, todayOpen) - todayLow;
 
   // 最低价偏离
   const devShortLow = ((todayLow - shortTrend) / shortTrend) * 100;
@@ -150,6 +159,7 @@ export function screenStock(stock, opts = {}) {
     name,
     industry: industry || '',
     board,
+    open: round2(todayOpen),
     low: round2(todayLow),
     high: round2(todayHigh),
     close: round2(todayClose),
@@ -162,6 +172,10 @@ export function screenStock(stock, opts = {}) {
     touchShort,
     deviationBull: round2(deviationBull),
     touchBull,
+    change: round2(change),
+    upperShadow: round2(upperShadow),
+    lowerShadow: round2(lowerShadow),
+    body: round2(body),
     brick: brick != null ? round2(brick) : null,
     brickPrev: brickPrev != null ? round2(brickPrev) : null,
     brickPrev2: brickPrev2 != null ? round2(brickPrev2) : null,

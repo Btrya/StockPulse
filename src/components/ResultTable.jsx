@@ -132,6 +132,51 @@ const columns = [
 // 连板模式隐藏的列
 const LIMIT_UP_HIDE = ['deviationShort', 'shortTrend', 'deviationBull', 'bullBear', 'j'];
 
+// 砖型反转额外列
+const changeCol = {
+  title: '涨幅',
+  dataIndex: 'change',
+  width: 80,
+  align: 'right',
+  sorter: (a, b) => (a.change || 0) - (b.change || 0),
+  render: v => {
+    if (v == null) return '-';
+    const color = v > 0 ? '#f87171' : v < 0 ? '#4ade80' : '#cbd5e1';
+    return <span className="num" style={{ color }}>{v > 0 ? '+' : ''}{v}%</span>;
+  },
+};
+
+const brickCol = {
+  title: '砖型',
+  dataIndex: 'brick',
+  width: 100,
+  align: 'right',
+  sorter: (a, b) => (a.brick || 0) - (b.brick || 0),
+  render: (v, r) => {
+    if (v == null) return '-';
+    const isRedGtGreen = r.brick > r.brickPrev2;
+    return (
+      <span className="num text-xs">
+        <span style={{ color: '#4ade80' }}>{r.brickPrev2}</span>
+        <span className="text-slate-500 mx-0.5">&rarr;</span>
+        <span style={{ color: '#f87171' }}>{v}</span>
+        {isRedGtGreen && <span className="ml-1 text-amber-400" title="红砖>绿砖">&#9650;</span>}
+      </span>
+    );
+  },
+};
+
+const arrangementCol = {
+  title: '排列',
+  key: 'arrangement',
+  width: 60,
+  align: 'center',
+  render: (_, r) => {
+    const isBull = r.shortTrend > r.bullBear;
+    return <Tag color={isBull ? 'red' : 'green'} className="m-0">{isBull ? '多' : '空'}</Tag>;
+  },
+};
+
 // 连板数列
 const consecutiveCol = {
   title: '连板',
@@ -146,6 +191,7 @@ const consecutiveCol = {
 export default function ResultTable({ data, hotData, subTab }) {
   const hotSets = useMemo(() => buildHotSets(hotData), [hotData]);
   const isLimitUp = subTab === 'consecutiveLimitUp';
+  const isBrick = subTab === 'brickReversal';
 
   // 动态生成行业 & 概念 filter
   const industries = [...new Set(data.map(r => r.industry).filter(Boolean))];
@@ -153,9 +199,22 @@ export default function ResultTable({ data, hotData, subTab }) {
     (a, b) => a.localeCompare(b, 'zh-CN')
   );
 
-  let baseCols = isLimitUp
-    ? [...columns.filter(c => !LIMIT_UP_HIDE.includes(c.dataIndex)), consecutiveCol]
-    : columns;
+  let baseCols;
+  if (isLimitUp) {
+    baseCols = [...columns.filter(c => !LIMIT_UP_HIDE.includes(c.dataIndex)), consecutiveCol];
+  } else if (isBrick) {
+    // 砖型反转：在收盘后插入涨幅、砖型、排列列
+    const idx = columns.findIndex(c => c.dataIndex === 'close');
+    baseCols = [
+      ...columns.slice(0, idx + 1),
+      changeCol,
+      brickCol,
+      arrangementCol,
+      ...columns.slice(idx + 1),
+    ];
+  } else {
+    baseCols = columns;
+  }
 
   const cols = baseCols.map(c => {
     if (c.dataIndex === 'industry') return { ...c, filters: industries.map(i => ({ text: i, value: i })) };

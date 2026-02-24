@@ -24,6 +24,7 @@ export default function ResultCard({ item, hotData, subTab }) {
   const reasons = hotSets ? getHotReasons(item, hotSets) : [];
   const isHot = reasons.length > 0;
   const isLimitUp = subTab === 'consecutiveLimitUp';
+  const isBrick = subTab === 'brickReversal';
 
   return (
     <Card size="small" className={isHot ? 'hot-card' : ''}>
@@ -38,10 +39,17 @@ export default function ResultCard({ item, hotData, subTab }) {
             </Tag>
           ))}
         </div>
-        {isLimitUp
-          ? <Tag color={colorCount(item.consecutiveCount)} className="num m-0">{item.consecutiveCount} 板</Tag>
-          : <Tag color={colorJ(item.j)} className="num m-0">J {item.j}</Tag>
-        }
+        <div className="flex items-center gap-1">
+          {isBrick && (
+            <Tag color={item.shortTrend > item.bullBear ? 'red' : 'green'} className="num m-0">
+              {item.shortTrend > item.bullBear ? '多' : '空'}
+            </Tag>
+          )}
+          {isLimitUp
+            ? <Tag color={colorCount(item.consecutiveCount)} className="num m-0">{item.consecutiveCount} 板</Tag>
+            : <Tag color={colorJ(item.j)} className="num m-0">J {item.j}</Tag>
+          }
+        </div>
       </div>
       {item.concepts?.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-2">
@@ -62,6 +70,25 @@ export default function ResultCard({ item, hotData, subTab }) {
           <span className="text-slate-500">最低 / 最高</span>
           <span className="num">{item.low} / {item.high ?? '-'}</span>
         </div>
+        {isBrick && (
+          <>
+            <div className="flex justify-between">
+              <span className="text-slate-500">涨幅</span>
+              <span className="num" style={{ color: item.change > 0 ? '#f87171' : item.change < 0 ? '#4ade80' : '#cbd5e1' }}>
+                {item.change > 0 ? '+' : ''}{item.change}%
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">砖型</span>
+              <span className="num">
+                <span style={{ color: '#4ade80' }}>{item.brickPrev2}</span>
+                <span className="text-slate-500 mx-0.5">&rarr;</span>
+                <span style={{ color: '#f87171' }}>{item.brick}</span>
+                {item.brick > item.brickPrev2 && <span className="ml-1 text-amber-400">&#9650;</span>}
+              </span>
+            </div>
+          </>
+        )}
         {isLimitUp ? (
           <div className="flex justify-between col-span-2">
             <span className="text-slate-500">连板数</span>

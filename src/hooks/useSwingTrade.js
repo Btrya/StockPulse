@@ -1,11 +1,11 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { fetchResults } from '../lib/api';
 import { getLastTradingDate } from '../lib/date';
 
 // 每个子策略的固定策略组合
 const PRESETS = {
   brickReversal: {
-    strategies: ['brickReversal', 'shortAboveBull', 'priceAboveLine'],
+    strategies: ['brickReversal'],
     combinator: 'AND',
   },
   consecutiveLimitUp: {
@@ -16,10 +16,19 @@ const PRESETS = {
 
 export default function useSwingTrade() {
   const [subTab, setSubTab] = useState('brickReversal');
-  const [line, setLine] = useState('short');  // priceAboveLine 参数
+  const [line, setLine] = useState('short');
   const [date, setDate] = useState(getLastTradingDate);
   const [excludeBoards, setExcludeBoards] = useState([]);
-  const [results, setResults] = useState([]);
+
+  // 砖型反转筛选参数
+  const [maxGain, setMaxGain] = useState(null);      // K线涨幅上限 %，null=不限
+  const [maxJ, setMaxJ] = useState(null);             // J值上限，null=不限
+  const [arrangement, setArrangement] = useState('any'); // 'any' | 'bull' | 'bear'
+  const [nearLine, setNearLine] = useState(false);    // 触碰趋势线
+  const [redGtGreen, setRedGtGreen] = useState(false); // 红砖 > 绿砖
+  const [upperLeBody, setUpperLeBody] = useState(false); // 上影线≤实体
+
+  const [rawResults, setRawResults] = useState([]);   // 后端原始结果
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(false);
   const initDone = useRef(false);
@@ -30,18 +39,18 @@ export default function useSwingTrade() {
       const res = await fetchResults({
         date: dateVal,
         klt: 'daily',
-        j: 100,         // 不限 J 值（砖型反转自带判断）
-        tolerance: 100,  // 不限偏离（priceAboveLine 取代偏离判断）
+        j: 100,
+        tolerance: 100,
         strategies: preset.strategies,
         combinator: preset.combinator,
         line: lineVal,
         excludeBoards: boards,
       });
-      setResults(res.data || []);
+      setRawResults(res.data || []);
       setMeta(res.meta || null);
     } catch (err) {
       console.error('SwingTrade query failed:', err);
-      setResults([]);
+      setRawResults([]);
       setMeta({ error: err.message });
     } finally {
       setLoading(false);
@@ -53,7 +62,7 @@ export default function useSwingTrade() {
     if (preset) query(preset, line, date, excludeBoards);
   }, [subTab, line, date, excludeBoards, query]);
 
-  // subTab、line、date 或 excludeBoards 变化时自动查询
+  // subTab、date 或 excludeBoards 变化时自动查询
   useEffect(() => {
     if (!initDone.current) {
       initDone.current = true;
@@ -62,12 +71,45 @@ export default function useSwingTrade() {
     if (preset) query(preset, line, date, excludeBoards);
   }, [subTab, line, date, excludeBoards, query]);
 
+  // 客户端筛选（仅砖型反转模式）
+  const results = useMemo(() => {
+    if (subTab !== 'brickReversal') return rawResults;
+
+    return rawResults.filter(r => {
+      // K线涨幅上限
+      if (maxGain != null && Math.abs(r.change) > maxGain) return false;
+      // J值上限
+      if (maxJ != null && r.j >= maxJ) return false;
+      // 多头/空头排列
+      if (arrangement === 'bull' && r.shortTrend <= r.bullBear) return false;
+      if (arrangement === 'bear' && r.shortTrend > r.bullBear) return false;
+      // 触碰趋势线（±2%）
+      if (nearLine) {
+        const nearShort = Math.abs(r.deviationShort) <= 2;
+        const nearBull = Math.abs(r.deviationBull) <= 2;
+        if (!nearShort && !nearBull) return false;
+      }
+      // 红砖 > 绿砖
+      if (redGtGreen && !(r.brick > r.brickPrev2)) return false;
+      // 上影线≤实体
+      if (upperLeBody && !(r.body > 0 && r.upperShadow <= r.body)) return false;
+      return true;
+    });
+  }, [rawResults, subTab, maxGain, maxJ, arrangement, nearLine, redGtGreen, upperLeBody]);
+
   return {
     subTab, setSubTab,
     line, setLine,
     date, setDate,
     excludeBoards, setExcludeBoards,
-    results, meta, loading,
+    // 砖型反转筛选
+    maxGain, setMaxGain,
+    maxJ, setMaxJ,
+    arrangement, setArrangement,
+    nearLine, setNearLine,
+    redGtGreen, setRedGtGreen,
+    upperLeBody, setUpperLeBody,
+    results, rawResults, meta, loading,
     refresh,
   };
 }
