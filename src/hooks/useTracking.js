@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { fetchTracking } from '../lib/api';
 import { getLastTradingDate } from '../lib/date';
 
-const DEFAULTS = { klt: 'daily', minDays: 2, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [] };
+const DEFAULTS = { klt: 'daily', minDays: 2, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false };
 
 export default function useTracking() {
   const [params, setParams] = useState(DEFAULTS);
@@ -31,6 +31,13 @@ export default function useTracking() {
   const activate = useCallback(() => {
     if (!initDone.current) {
       initDone.current = true;
+      query(params, date);
+    }
+  }, [params, date, query]);
+
+  // params/date 变化后自动查询（仅初始化完成后）
+  useEffect(() => {
+    if (initDone.current) {
       query(params, date);
     }
   }, [params, date, query]);

@@ -1,4 +1,4 @@
-import { Select, InputNumber, Radio, Button, Space, Card, Checkbox, DatePicker } from 'antd';
+import { Select, InputNumber, Radio, Button, Space, Card, Checkbox, DatePicker, Switch } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import { buildHotOptions } from '../hooks/useHotData';
 import { getLastTradingDate } from '../lib/date';
@@ -130,6 +130,36 @@ export default function TrackingPanel({ params, setParams, date, setDate, indust
             />
           </div>
 
+          {params.klt === 'daily' && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">周线多头</span>
+              <Switch
+                checked={params.weeklyBull}
+                onChange={v => update('weeklyBull', v)}
+              />
+            </div>
+          )}
+
+          {params.klt === 'daily' && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">周线低位</span>
+              <Switch
+                checked={params.weeklyLowJ}
+                onChange={v => update('weeklyLowJ', v)}
+              />
+            </div>
+          )}
+
+          {params.klt === 'weekly' && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">日线低位</span>
+              <Switch
+                checked={params.dailyLowJ}
+                onChange={v => update('dailyLowJ', v)}
+              />
+            </div>
+          )}
+
           <Space>
             <Button
               type="primary"
@@ -141,7 +171,7 @@ export default function TrackingPanel({ params, setParams, date, setDate, indust
             </Button>
             <Button
               icon={<ReloadOutlined />}
-              onClick={() => { setParams({ klt: 'daily', minDays: 2, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [] }); setDate(getLastTradingDate()); }}
+              onClick={() => { setParams({ klt: 'daily', minDays: 2, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false }); setDate(getLastTradingDate()); }}
             >
               重置
             </Button>

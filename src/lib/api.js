@@ -55,6 +55,9 @@ export function fetchTracking(params) {
   if (params.industries?.length) qs.set('industries', params.industries.join(','));
   if (params.excludeBoards?.length) qs.set('excludeBoards', params.excludeBoards.join(','));
   if (params.concepts?.length) qs.set('concepts', params.concepts.join(','));
+  if (params.weeklyBull) qs.set('weeklyBull', '1');
+  if (params.weeklyLowJ) qs.set('weeklyLowJ', '1');
+  if (params.dailyLowJ) qs.set('dailyLowJ', '1');
   return request(`/tracking?${qs}`);
 }
 

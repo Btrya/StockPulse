@@ -1,5 +1,5 @@
 import * as redis from './_lib/redis.js';
-import { KEY, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS, TRACKING_DAILY_WINDOW, TRACKING_WEEKLY_WINDOW, isWeekend, getCNDate } from './_lib/constants.js';
+import { KEY, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS, TRACKING_DAILY_WINDOW, TRACKING_WEEKLY_WINDOW, isWeekend, getCNDate, snapToFriday } from './_lib/constants.js';
 import { filterResults } from './_lib/screener.js';
 
 export default async function handler(req, res) {
@@ -11,6 +11,9 @@ export default async function handler(req, res) {
     const industries = req.query.industries ? req.query.industries.split(',').filter(Boolean) : [];
     const excludeBoards = req.query.excludeBoards ? req.query.excludeBoards.split(',').filter(Boolean) : [];
     const concepts = req.query.concepts ? req.query.concepts.split(',').filter(Boolean) : [];
+    const weeklyBull = req.query.weeklyBull === '1';
+    const weeklyLowJ = req.query.weeklyLowJ === '1';
+    const dailyLowJ = req.query.dailyLowJ === '1';
     const reqDate = req.query.date || null; // 用户指定日期（锚定追踪窗口）
 
     if (!redis.isConfigured()) {
@@ -138,11 +141,38 @@ export default async function handler(req, res) {
       }
     }
 
+    // 跨周期附加：日线 ↔ 周线互查
+    if (dates.length) {
+      try {
+        if (klt === 'daily') {
+          const friday = snapToFriday(dates[0]);
+          const weeklyData = await redis.get(KEY.screenResult(friday, 'weekly'));
+          if (weeklyData && weeklyData.length) {
+            const weeklyMap = new Map(weeklyData.map(w => [w.ts_code, w]));
+            for (const t of tracked) {
+              const w = weeklyMap.get(t.ts_code);
+              t.latest.weeklyBull = w ? w.shortTrend > w.bullBear : null;
+              t.latest.weeklyJ = w ? w.j : null;
+            }
+          }
+        } else if (klt === 'weekly') {
+          const dailyData = await redis.get(KEY.screenResult(dates[0], 'daily'));
+          if (dailyData && dailyData.length) {
+            const dailyMap = new Map(dailyData.map(d => [d.ts_code, d]));
+            for (const t of tracked) {
+              const d = dailyMap.get(t.ts_code);
+              t.latest.dailyJ = d ? d.j : null;
+            }
+          }
+        }
+      } catch {}
+    }
+
     // 用用户参数二次过滤（基于 latest）
     // 复用 filterResults 的策略逻辑，通过包装 latest 字段过桥
     const latestArr = tracked.map(t => t.latest);
     const passSet = new Set(
-      filterResults(latestArr, { jThreshold: j, tolerance, industries, excludeBoards, concepts })
+      filterResults(latestArr, { jThreshold: j, tolerance, industries, excludeBoards, concepts, weeklyBull, weeklyLowJ, dailyLowJ })
         .map(r => r.ts_code)
     );
     const userFiltered = tracked.filter(t => passSet.has(t.ts_code));
