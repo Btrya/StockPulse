@@ -43,6 +43,9 @@ export default async function handler(req, res) {
     const strategies = req.query.strategies ? req.query.strategies.split(',').filter(Boolean) : undefined;
     const combinator = req.query.combinator || undefined;
     const line = req.query.line || undefined;
+    const weeklyBull = req.query.weeklyBull === '1';
+    const weeklyLowJ = req.query.weeklyLowJ === '1';
+    const dailyLowJ = req.query.dailyLowJ === '1';
 
     // 尝试从 Redis 读取扫描结果
     let data = null;
@@ -91,16 +94,29 @@ export default async function handler(req, res) {
       } catch {}
     }
 
-    // 日线模式下附加周线多头字段
-    if (data && data.length && klt === 'daily' && redis.isConfigured()) {
+    // 跨周期附加：日线 ↔ 周线互查
+    if (data && data.length && redis.isConfigured()) {
       try {
-        const friday = snapToFriday(scanDate);
-        const weeklyData = await redis.get(KEY.screenResult(friday, 'weekly'));
-        if (weeklyData && weeklyData.length) {
-          const weeklyMap = new Map(weeklyData.map(w => [w.ts_code, w]));
-          for (const r of data) {
-            const w = weeklyMap.get(r.ts_code);
-            r.weeklyBull = w ? w.shortTrend > w.bullBear : null;
+        if (klt === 'daily') {
+          const friday = snapToFriday(scanDate);
+          const weeklyData = await redis.get(KEY.screenResult(friday, 'weekly'));
+          if (weeklyData && weeklyData.length) {
+            const weeklyMap = new Map(weeklyData.map(w => [w.ts_code, w]));
+            for (const r of data) {
+              const w = weeklyMap.get(r.ts_code);
+              r.weeklyBull = w ? w.shortTrend > w.bullBear : null;
+              r.weeklyJ = w ? w.j : null;
+            }
+          }
+        } else if (klt === 'weekly') {
+          // 周线模式：读日线数据附加 dailyJ
+          const dailyData = await redis.get(KEY.screenResult(scanDate, 'daily'));
+          if (dailyData && dailyData.length) {
+            const dailyMap = new Map(dailyData.map(d => [d.ts_code, d]));
+            for (const r of data) {
+              const d = dailyMap.get(r.ts_code);
+              r.dailyJ = d ? d.j : null;
+            }
           }
         }
       } catch {}
@@ -140,7 +156,7 @@ export default async function handler(req, res) {
       (a, b) => a.localeCompare(b, 'zh-CN')
     );
 
-    const filtered = filterResults(data, { jThreshold: j, tolerance, industries, excludeBoards, concepts, strategies, combinator, line });
+    const filtered = filterResults(data, { jThreshold: j, tolerance, industries, excludeBoards, concepts, strategies, combinator, line, weeklyBull, weeklyLowJ, dailyLowJ });
 
     filtered.sort((a, b) => {
       const va = a[sort] ?? 0;

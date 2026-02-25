@@ -120,6 +120,8 @@ export default function App() {
           setUpperLeBody={swingTrade.setUpperLeBody}
           weeklyBull={swingTrade.weeklyBull}
           setWeeklyBull={swingTrade.setWeeklyBull}
+          weeklyLowJ={swingTrade.weeklyLowJ}
+          setWeeklyLowJ={swingTrade.setWeeklyLowJ}
           results={swingTrade.results}
           rawTotal={swingTrade.rawResults.length}
           meta={swingTrade.meta}

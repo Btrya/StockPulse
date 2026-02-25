@@ -142,6 +142,26 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </div>
           )}
 
+          {params.klt === 'daily' && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">周线低位</span>
+              <Switch
+                checked={params.weeklyLowJ}
+                onChange={v => update('weeklyLowJ', v)}
+              />
+            </div>
+          )}
+
+          {params.klt === 'weekly' && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">日线低位</span>
+              <Switch
+                checked={params.dailyLowJ}
+                onChange={v => update('dailyLowJ', v)}
+              />
+            </div>
+          )}
+
           <Space>
             <Button
               type="primary"
@@ -153,7 +173,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </Button>
             <Button
               icon={<ReloadOutlined />}
-              onClick={() => { setParams({ klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false }); setDate(getLastTradingDate()); }}
+              onClick={() => { setParams({ klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false }); setDate(getLastTradingDate()); }}
             >
               重置
             </Button>

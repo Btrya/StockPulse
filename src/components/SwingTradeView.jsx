@@ -22,6 +22,7 @@ export default function SwingTradeView({
   redGtGreen, setRedGtGreen,
   upperLeBody, setUpperLeBody,
   weeklyBull, setWeeklyBull,
+  weeklyLowJ, setWeeklyLowJ,
   results, rawTotal, meta, loading,
   hotData,
 }) {
@@ -142,6 +143,15 @@ export default function SwingTradeView({
               size="small"
             />
             <span className="text-slate-400">周线多头</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Switch
+              checked={weeklyLowJ}
+              onChange={setWeeklyLowJ}
+              size="small"
+            />
+            <span className="text-slate-400">周线低位</span>
           </div>
         </div>
       )}

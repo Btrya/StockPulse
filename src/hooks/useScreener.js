@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { fetchResults } from '../lib/api';
 import { getLastTradingDate } from '../lib/date';
 
-const DEFAULTS = { klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false };
+const DEFAULTS = { klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false };
 
 function readURL() {
   const sp = new URLSearchParams(window.location.search);
@@ -14,6 +14,8 @@ function readURL() {
     excludeBoards: sp.get('excludeBoards') ? sp.get('excludeBoards').split(',') : [],
     concepts: sp.get('concepts') ? sp.get('concepts').split(',') : [],
     weeklyBull: sp.get('weeklyBull') === '1',
+    weeklyLowJ: sp.get('weeklyLowJ') === '1',
+    dailyLowJ: sp.get('dailyLowJ') === '1',
   };
 }
 
@@ -26,6 +28,8 @@ function writeURL(params) {
   if (params.excludeBoards.length) sp.set('excludeBoards', params.excludeBoards.join(','));
   if (params.concepts.length) sp.set('concepts', params.concepts.join(','));
   if (params.weeklyBull) sp.set('weeklyBull', '1');
+  if (params.weeklyLowJ) sp.set('weeklyLowJ', '1');
+  if (params.dailyLowJ) sp.set('dailyLowJ', '1');
   const qs = sp.toString();
   const url = qs ? `?${qs}` : window.location.pathname;
   window.history.replaceState(null, '', url);

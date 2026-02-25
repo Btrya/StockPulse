@@ -63,13 +63,6 @@ export const STRATEGIES = {
     paramKeys: [],
     test: (r) => r.consecutiveCount >= 2,
   },
-  weeklyBull: {
-    id: 'weeklyBull',
-    name: '周线多头趋势',
-    desc: '周线短期趋势线 > 多空分界线（仅日线可用）',
-    paramKeys: [],
-    test: (r) => r.weeklyBull === true,
-  },
 };
 
 // 默认启用的策略（保持现有行为：J值低位 AND 触碰趋势线）
@@ -210,7 +203,7 @@ export function applyStrategies(r, params, strategyIds = DEFAULT_STRATEGIES, com
 // strategies/combinator 可选，不传时使用默认策略（lowJ AND nearLine），行为与改动前完全一致
 export function filterResults(results, {
   jThreshold, tolerance, industries, excludeBoards, concepts,
-  strategies, combinator, line,
+  strategies, combinator, line, weeklyBull, weeklyLowJ, dailyLowJ,
 } = {}) {
   const sIds = strategies || DEFAULT_STRATEGIES;
   const comb = combinator || 'AND';
@@ -225,6 +218,10 @@ export function filterResults(results, {
       const rc = r.concepts || [];
       if (!concepts.some(c => rc.includes(c))) return false;
     }
+    // 跨周期独立 AND 条件
+    if (weeklyBull && r.weeklyBull !== true) return false;
+    if (weeklyLowJ && !(r.weeklyJ != null && r.weeklyJ < 13)) return false;
+    if (dailyLowJ && !(r.dailyJ != null && r.dailyJ < 13)) return false;
     return applyStrategies(r, params, sIds, comb);
   });
 }
