@@ -1,19 +1,20 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
 import { triggerPostAnalysis, fetchPostAnalysisData } from '../lib/api';
-import { simulateTrades, DEFAULT_STRATEGIES } from '../lib/simulate';
+import { simulateTrades, DEFAULT_STRATEGIES, DEFAULT_FILTERS } from '../lib/simulate';
 
 export default function usePostAnalysis(date, klt) {
   const [rawData, setRawData] = useState(null);
   const [strategies, setStrategies] = useState(DEFAULT_STRATEGIES);
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [window, setWindow] = useState(30);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(null);
   const timerRef = useRef(null);
 
-  // core: strategies change → instant recalc, zero network
+  // core: strategies/filters change → instant recalc, zero network
   const result = useMemo(
-    () => simulateTrades(rawData, strategies),
-    [rawData, strategies],
+    () => simulateTrades(rawData, strategies, filters),
+    [rawData, strategies, filters],
   );
 
   const start = useCallback(async (tsCodes, reset = false) => {
@@ -78,6 +79,7 @@ export default function usePostAnalysis(date, klt) {
   return {
     rawData,
     strategies, setStrategies,
+    filters, setFilters,
     window, setWindow,
     loading, progress,
     trades: result.trades,

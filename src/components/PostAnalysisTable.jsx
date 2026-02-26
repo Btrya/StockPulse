@@ -1,5 +1,5 @@
 import { Table, Tag } from 'antd';
-import { STRATEGY_LABELS } from '../lib/simulate';
+import { STRATEGY_LABELS, FILTER_LABELS } from '../lib/simulate';
 
 function colorPnl(v) {
   if (v > 0) return '#f87171';
@@ -13,15 +13,14 @@ function fmtPct(v) {
 }
 
 const EXIT_REASON_COLORS = {
-  breakEntryLow: 'red',
-  breakBullBear: 'orange',
   fixedStopLoss: 'volcano',
   timeStop: 'gold',
   fixedTakeProfit: 'green',
   bigCandleExit: 'cyan',
-  breakShortTrend: 'blue',
   windowEnd: 'default',
 };
+
+const FLAG_KEYS = ['closeAboveShort', 'hasVolumeDouble', 'hasShrinkingPullback', 'hasConsecutiveShrink'];
 
 const columns = [
   {
@@ -110,6 +109,15 @@ const columns = [
       </Tag>
     ),
   },
+  ...FLAG_KEYS.map(key => ({
+    title: FILTER_LABELS[key],
+    dataIndex: key,
+    width: 90,
+    align: 'center',
+    filters: [{ text: '是', value: true }, { text: '否', value: false }],
+    onFilter: (value, record) => !!record[key] === value,
+    render: v => <Tag color={v ? 'green' : 'default'} className="m-0">{v ? '是' : '否'}</Tag>,
+  })),
 ];
 
 export default function PostAnalysisTable({ data }) {
@@ -139,7 +147,7 @@ export default function PostAnalysisTable({ data }) {
       rowKey="code"
       size="small"
       pagination={{ defaultPageSize: 50, showSizeChanger: true, showTotal: t => `共 ${t} 条` }}
-      scroll={{ x: 1000 }}
+      scroll={{ x: 1400 }}
     />
   );
 }

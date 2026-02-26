@@ -1,5 +1,5 @@
-import { InputNumber, Checkbox, Button, Progress, Space } from 'antd';
-import { STRATEGY_LABELS } from '../lib/simulate';
+import { InputNumber, Checkbox, Button, Progress, Space, Divider } from 'antd';
+import { STRATEGY_LABELS, FILTER_LABELS } from '../lib/simulate';
 
 const STRATEGY_PARAMS = {
   fixedStopLoss: { key: 'pct', label: '止损%', min: 1, max: 20 },
@@ -10,6 +10,7 @@ const STRATEGY_PARAMS = {
 
 export default function PostAnalysisPanel({
   strategies, setStrategies,
+  filters, setFilters,
   window, setWindow,
   loading, progress,
   onStart,
@@ -27,6 +28,10 @@ export default function PostAnalysisPanel({
       ...prev,
       [id]: { ...prev[id], [key]: val },
     }));
+  };
+
+  const toggleFilter = (id) => {
+    setFilters(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   const pct = progress ? Math.round((progress.idx / progress.total) * 100) : 0;
@@ -58,6 +63,20 @@ export default function PostAnalysisPanel({
         </Button>
       </div>
 
+      <Divider orientation="left" plain className="!my-2 !text-xs">入场过滤</Divider>
+      <div className="flex flex-wrap gap-x-6 gap-y-2 mb-3">
+        {Object.entries(FILTER_LABELS).map(([id, label]) => (
+          <Checkbox
+            key={id}
+            checked={filters[id]}
+            onChange={() => toggleFilter(id)}
+          >
+            <span className="text-xs">{label}</span>
+          </Checkbox>
+        ))}
+      </div>
+
+      <Divider orientation="left" plain className="!my-2 !text-xs">退出策略</Divider>
       <div className="flex flex-wrap gap-x-6 gap-y-2 mb-3">
         {Object.entries(STRATEGY_LABELS).map(([id, label]) => {
           const param = STRATEGY_PARAMS[id];

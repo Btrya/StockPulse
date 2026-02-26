@@ -10,32 +10,53 @@ function pct(a, b) {
 
 // 默认策略参数
 export const DEFAULT_STRATEGIES = {
-  breakEntryLow: { enabled: true },
-  breakBullBear: { enabled: true },
   fixedStopLoss: { enabled: true, pct: 5 },
   timeStop: { enabled: false, days: 10 },
   fixedTakeProfit: { enabled: false, pct: 10 },
   bigCandleExit: { enabled: false, days: 3 },
-  breakShortTrend: { enabled: false },
 };
 
 // 策略名称映射
 export const STRATEGY_LABELS = {
-  breakEntryLow: '跌破进场K线低点',
-  breakBullBear: '跌破多空线',
   fixedStopLoss: '固定止损',
   timeStop: '时间止损',
   fixedTakeProfit: '固定止盈',
   bigCandleExit: '大阳线后退出',
-  breakShortTrend: '跌破短期趋势线',
+};
+
+// 入场过滤条件
+export const DEFAULT_FILTERS = {
+  closeAboveShort: false,
+  hasVolumeDouble: false,
+  hasShrinkingPullback: false,
+  hasConsecutiveShrink: false,
+};
+
+export const FILTER_LABELS = {
+  closeAboveShort: '收盘在短期线上',
+  hasVolumeDouble: '有倍量出现',
+  hasShrinkingPullback: '缩量回调',
+  hasConsecutiveShrink: '连续缩量下跌',
 };
 
 /**
- * 主函数：遍历每只股票调用 simulateOne
+ * 主函数：先按 filters 过滤，再遍历每只股票调用 simulateOne
  */
-export function simulateTrades(rawData, strategies) {
+export function simulateTrades(rawData, strategies, filters) {
   if (!rawData?.length) return { trades: [], stats: null };
-  const trades = rawData.map(stock => simulateOne(stock, strategies)).filter(Boolean);
+
+  // apply entry filters
+  let filtered = rawData;
+  if (filters) {
+    filtered = rawData.filter(stock => {
+      for (const key of Object.keys(filters)) {
+        if (filters[key] && !stock[key]) return false;
+      }
+      return true;
+    });
+  }
+
+  const trades = filtered.map(stock => simulateOne(stock, strategies)).filter(Boolean);
   const stats = computeAggStats(trades);
   return { trades, stats };
 }
@@ -44,7 +65,7 @@ export function simulateTrades(rawData, strategies) {
  * 单只股票模拟：逐日遍历 futureBars，检查退出策略（取先触发者）
  */
 export function simulateOne(stock, strategies) {
-  const { futureBars, entryOpen, entryLow } = stock;
+  const { futureBars, entryOpen } = stock;
   if (!futureBars?.length || !entryOpen) return null;
 
   const buyPrice = entryOpen;
@@ -74,24 +95,7 @@ export function simulateOne(stock, strategies) {
       bigCandleDay = i + 1;
     }
 
-    // check exit strategies in priority order
-    // 1. breakEntryLow
-    if (strategies.breakEntryLow?.enabled && bar.low < entryLow) {
-      exitDay = i + 1;
-      exitPrice = entryLow; // assume exit at entryLow level
-      exitReason = 'breakEntryLow';
-      break;
-    }
-
-    // 2. breakBullBear
-    if (strategies.breakBullBear?.enabled && bar.bullBear != null && bar.close < bar.bullBear) {
-      exitDay = i + 1;
-      exitPrice = bar.close;
-      exitReason = 'breakBullBear';
-      break;
-    }
-
-    // 3. fixedStopLoss
+    // 1. fixedStopLoss
     if (strategies.fixedStopLoss?.enabled) {
       const stopPct = strategies.fixedStopLoss.pct || 5;
       if (dayLowPnl <= -stopPct) {
@@ -102,7 +106,7 @@ export function simulateOne(stock, strategies) {
       }
     }
 
-    // 4. timeStop
+    // 2. timeStop
     if (strategies.timeStop?.enabled) {
       const stopDays = strategies.timeStop.days || 10;
       if (i + 1 >= stopDays && dayPnl <= 0) {
@@ -113,7 +117,7 @@ export function simulateOne(stock, strategies) {
       }
     }
 
-    // 5. fixedTakeProfit
+    // 3. fixedTakeProfit
     if (strategies.fixedTakeProfit?.enabled) {
       const tpPct = strategies.fixedTakeProfit.pct || 10;
       if (dayHighPnl >= tpPct) {
@@ -124,7 +128,7 @@ export function simulateOne(stock, strategies) {
       }
     }
 
-    // 6. bigCandleExit
+    // 4. bigCandleExit
     if (strategies.bigCandleExit?.enabled && bigCandleDay != null) {
       const afterDays = strategies.bigCandleExit.days || 3;
       if (i + 1 >= bigCandleDay + afterDays) {
@@ -133,14 +137,6 @@ export function simulateOne(stock, strategies) {
         exitReason = 'bigCandleExit';
         break;
       }
-    }
-
-    // 7. breakShortTrend
-    if (strategies.breakShortTrend?.enabled && bar.shortTrend != null && bar.close < bar.shortTrend) {
-      exitDay = i + 1;
-      exitPrice = bar.close;
-      exitReason = 'breakShortTrend';
-      break;
     }
   }
 
@@ -169,6 +165,10 @@ export function simulateOne(stock, strategies) {
     bigCandleDay,
     holdDays: exitDay,
     exitReason,
+    closeAboveShort: stock.closeAboveShort,
+    hasVolumeDouble: stock.hasVolumeDouble,
+    hasShrinkingPullback: stock.hasShrinkingPullback,
+    hasConsecutiveShrink: stock.hasConsecutiveShrink,
   };
 }
 

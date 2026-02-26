@@ -121,6 +121,8 @@ export default function BacktestView({
                   <PostAnalysisPanel
                     strategies={pa.strategies}
                     setStrategies={pa.setStrategies}
+                    filters={pa.filters}
+                    setFilters={pa.setFilters}
                     window={pa.window}
                     setWindow={pa.setWindow}
                     loading={pa.loading}
