@@ -138,7 +138,7 @@ export default function PostAnalysisTable({ data }) {
       dataSource={data}
       rowKey="code"
       size="small"
-      pagination={{ pageSize: 50, showSizeChanger: true, showTotal: t => `共 ${t} 条` }}
+      pagination={{ defaultPageSize: 50, showSizeChanger: true, showTotal: t => `共 ${t} 条` }}
       scroll={{ x: 1000 }}
     />
   );

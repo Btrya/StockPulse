@@ -171,7 +171,7 @@ export default function TrackingTable({ data, hotData }) {
       rowKey="ts_code"
       size="small"
       rowClassName={rowClassName}
-      pagination={{ pageSize: 50, showSizeChanger: true, showTotal: t => `共 ${t} 条` }}
+      pagination={{ defaultPageSize: 50, showSizeChanger: true, showTotal: t => `共 ${t} 条` }}
       scroll={{ x: 1000 }}
     />
   );
