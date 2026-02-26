@@ -27,6 +27,8 @@ export const KEY = {
   HOT_DATA: 'hot:data',
   BULK_PROGRESS: 'bulk:progress',
   bulkDate: (klt, td) => `bulk:${klt}:${td}`,
+  postAnalysis: (date, klt, window) => `pa:${date}:${klt}:${window}`,
+  PA_PROGRESS: 'pa:progress',
 };
 
 // TTL (seconds)
@@ -38,6 +40,7 @@ export const TTL = {
   CONCEPTS: 604800,            // 7d
   BACKTEST_RESULT: 172800,     // 48h
   HOT_DATA: 3600,               // 1h
+  POST_ANALYSIS: 604800,         // 7d
 };
 
 // 追踪窗口

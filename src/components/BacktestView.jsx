@@ -1,9 +1,13 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Spin, Empty, Alert, message } from 'antd';
+import { Spin, Empty, Alert, Collapse, message } from 'antd';
 import BacktestPanel from './BacktestPanel';
 import ResultTable from './ResultTable';
 import ResultCard from './ResultCard';
 import ExportBar from './ExportBar';
+import usePostAnalysis from '../hooks/usePostAnalysis';
+import PostAnalysisPanel from './PostAnalysisPanel';
+import PostAnalysisStats from './PostAnalysisStats';
+import PostAnalysisTable from './PostAnalysisTable';
 
 export default function BacktestView({
   params, setParams,
@@ -14,7 +18,12 @@ export default function BacktestView({
   sharedIndustries, sharedConcepts,
   hotData,
 }) {
-  useEffect(() => cleanup, [cleanup]);
+  const pa = usePostAnalysis(date, params.klt);
+
+  useEffect(() => {
+    return () => { cleanup(); pa.cleanup(); };
+  }, [cleanup, pa.cleanup]);
+
   const [stockFilter, setStockFilter] = useState('');
 
   const handleStartBacktest = async () => {
@@ -22,6 +31,17 @@ export default function BacktestView({
     if (res?.queued) {
       message.success(`${date} 已加入回测队列（队列 ${res.queue?.length || 1} 天）`);
     }
+  };
+
+  const handleStartPostAnalysis = () => {
+    // build tsCodes from filtered results
+    const tsCodes = results.map(r => ({
+      tsCode: r.ts_code,
+      code: r.code,
+      name: r.name,
+      industry: r.industry,
+    }));
+    pa.start(tsCodes);
   };
 
   // 本地按代码/名称过滤
@@ -90,6 +110,30 @@ export default function BacktestView({
               <ResultCard key={item.code} item={item} hotData={hotData} />
             ))}
           </div>
+
+          <Collapse
+            className="mt-4"
+            items={[{
+              key: 'post-analysis',
+              label: `后验分析${pa.trades.length ? ` (${pa.trades.length} 只)` : ''}`,
+              children: (
+                <div>
+                  <PostAnalysisPanel
+                    strategies={pa.strategies}
+                    setStrategies={pa.setStrategies}
+                    window={pa.window}
+                    setWindow={pa.setWindow}
+                    loading={pa.loading}
+                    progress={pa.progress}
+                    onStart={handleStartPostAnalysis}
+                    disabled={!results.length || pa.loading}
+                  />
+                  {pa.stats && <PostAnalysisStats stats={pa.stats} />}
+                  {pa.trades.length > 0 && <PostAnalysisTable data={pa.trades} />}
+                </div>
+              ),
+            }]}
+          />
         </div>
       ) : scanning ? (
         <div className="text-center py-16">

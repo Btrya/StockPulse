@@ -88,3 +88,19 @@ export function searchStocks(q) {
 export function fetchHotData() {
   return request('/hot');
 }
+
+export function triggerPostAnalysis(body) {
+  return request('/post-analysis', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+export function fetchPostAnalysisData(params) {
+  const qs = new URLSearchParams();
+  qs.set('date', params.date);
+  if (params.klt) qs.set('klt', params.klt);
+  if (params.window != null) qs.set('window', String(params.window));
+  return request(`/post-analysis-data?${qs}`);
+}
