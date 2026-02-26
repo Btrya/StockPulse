@@ -10,22 +10,44 @@ const TIMEOUT_MS = 50000;
 async function getKlinesWithCache(tsCode, klt, startDate, endDate) {
   const cacheKey = KEY.kline(tsCode, klt);
   const cached = await redis.get(cacheKey);
+  const fn = klt === 'weekly' ? getWeeklyRange : getDailyRange;
 
   if (cached && cached.length > 0) {
     const first = cached[0].trade_date;
     const last = cached[cached.length - 1].trade_date;
+
+    // full coverage → direct return
     if (first <= startDate && last >= endDate) {
+      return cached.filter(k => k.trade_date >= startDate && k.trade_date <= endDate);
+    }
+
+    // partial coverage → only fetch the missing tail (future bars)
+    // typical case: cache has history from fast-scan, but post-analysis needs future bars too
+    if (first <= startDate && last >= startDate) {
+      const gapStart = incrementDate(last); // day after cache ends
+      if (gapStart <= endDate) {
+        await new Promise(r => setTimeout(r, TUSHARE_DELAY_MS));
+        let extra = [];
+        try { extra = await fn(tsCode, gapStart, endDate) || []; } catch { /* ok */ }
+
+        // merge cache + extra
+        const map = new Map();
+        for (const k of cached) map.set(k.trade_date, k);
+        for (const k of extra) map.set(k.trade_date, k);
+        const merged = [...map.values()].sort((a, b) => a.trade_date < b.trade_date ? -1 : 1);
+        await redis.set(cacheKey, merged, TTL.KLINE);
+        return merged.filter(k => k.trade_date >= startDate && k.trade_date <= endDate);
+      }
+      // gapStart > endDate means cache already covers endDate
       return cached.filter(k => k.trade_date >= startDate && k.trade_date <= endDate);
     }
   }
 
-  // cache miss or range not covered — call Tushare
+  // full miss — fetch entire range
   await new Promise(r => setTimeout(r, TUSHARE_DELAY_MS));
-  const fn = klt === 'weekly' ? getWeeklyRange : getDailyRange;
   const klines = await fn(tsCode, startDate, endDate);
 
   if (klines && klines.length > 0) {
-    // merge with existing cache to expand coverage
     if (cached && cached.length > 0) {
       const map = new Map();
       for (const k of cached) map.set(k.trade_date, k);
@@ -38,6 +60,13 @@ async function getKlinesWithCache(tsCode, klt, startDate, endDate) {
   }
 
   return klines;
+}
+
+// YYYYMMDD → next day YYYYMMDD
+function incrementDate(ymd) {
+  const y = +ymd.slice(0, 4), m = +ymd.slice(4, 6) - 1, d = +ymd.slice(6, 8);
+  const dt = new Date(Date.UTC(y, m, d + 1));
+  return dt.toISOString().slice(0, 10).replace(/-/g, '');
 }
 
 // ---- 量价分析 ----

@@ -2,18 +2,20 @@
 // 快速全量扫描：按交易日批量拉取全市场行情，本地计算指标后写入 Redis
 // 用法: node --env-file=.env.local scripts/fast-scan.mjs [klt] [date] [days]
 // 示例:
-//   node --env-file=.env.local scripts/fast-scan.mjs                       # 日线，今天，默认 130 天
+//   node --env-file=.env.local scripts/fast-scan.mjs                       # 日线，今天，默认 180 天
 //   node --env-file=.env.local scripts/fast-scan.mjs daily 2026-02-13      # 指定日期
-//   node --env-file=.env.local scripts/fast-scan.mjs daily 2026-02-13 200  # 首次建基线拉 200 天
+//   node --env-file=.env.local scripts/fast-scan.mjs daily 2026-02-13 250  # 首次建基线拉 250 天
 //   node --env-file=.env.local scripts/fast-scan.mjs weekly
 //
 // days 参数：拉取多少个交易日的数据（最低 120，screenStock 需要 120+ 根 K 线）
-//   - 首次运行建议 200，确保递归指标充分收敛
-//   - 日常更新用默认 130 即可（120 根 + 10 根余量）
+//   - 默认 180：覆盖筛选指标 120 根 + 后验分析量价窗口 30 天 + 余量
+//   - 首次运行建议 250，确保递归指标充分收敛
 //
 // 原理：
 //   Tushare daily 接口传 trade_date（不传 ts_code）→ 一次返回全市场 ~5000 条
-//   拉 130 个交易日 ≈ 130 次 API 调用 ≈ 40-50s（vs 原来逐股票 5000 次 ≈ 30 分钟）
+//   拉 180 个交易日 ≈ 180 次 API 调用 ≈ 50-60s
+//   然后对每个有效交易日（120+根K线）逐日在内存中回测，写入 screen:* + kl:* 缓存
+//   有效回测日期 = days - 120，默认 180 - 120 = 60 个交易日 ≈ 3 个月
 
 import { screenStock } from '../api/_lib/screener.js';
 import {
@@ -62,9 +64,9 @@ async function main() {
   const klt = process.argv[2] || 'daily';
   const targetDate = process.argv[3] || getLastTradingDate();
   const daysArg = parseInt(process.argv[4], 10);
-  // 日线：130 个交易日 → 130 根日 K 线（120 + 余量）
-  // 周线：130 个交易周 → 130 根周 K 线，需要 ~650 个交易日的日历范围
-  const defaultBars = 130;
+  // 日线：180 个交易日 → 180 根日 K 线（120 指标 + 30 量价 + 余量）
+  // 周线：180 个交易周 → 180 根周 K 线
+  const defaultBars = 180;
   const lookbackBars = Math.max(120, daysArg || defaultBars);
 
   if (!process.env.TUSHARE_TOKEN) { console.error('缺少 TUSHARE_TOKEN'); process.exit(1); }
@@ -143,64 +145,97 @@ async function main() {
 
   console.log(`  拉取完成：${fetchedDays} 天，${totalRows} 条，${klineMap.size} 只股票`);
 
-  // 4. 本地计算指标
-  console.log('4. 计算指标...');
+  // 4. 逐日回测：对每个有效交易日（120+ 根历史K线）计算筛选结果
+  const minBars = 120;
+  const validDates = tradingDates.slice(minBars - 1);
+  console.log(`4. 逐日回测（${validDates.length} 个有效交易日，每日需 ${minBars}+ 根K线）...`);
+
   let conceptsMap = null;
   try { conceptsMap = await redisGet(KEY.CONCEPTS_MAP); } catch {}
 
-  const hits = [];
-  let skipped = 0;
-  for (const [tsCode, klines] of klineMap) {
-    const stock = stockMap.get(tsCode);
-    if (!stock) { skipped++; continue; }
+  const screenTTL = klt === 'daily' ? TTL.SCREEN_RESULT_DAILY : TTL.SCREEN_RESULT_WEEKLY;
+  const screenDateSet = new Set();
+  const screenDates = []; // YYYY-MM-DD，按时间升序
+  let lastHitCount = 0;
 
-    // klines 已经按 trade_date 正序（因为 tradingDates 是升序的）
-    const result = screenStock({
-      ...stock,
-      klines: klines.map(k => ({
-        open: k.open,
-        high: k.high,
-        low: k.low,
-        close: k.close,
-        vol: k.vol,
-      })),
-    }, { noFilter: true });
+  for (let vi = 0; vi < validDates.length; vi++) {
+    const td = validDates[vi];
+    const dateStr = td.slice(0, 4) + '-' + td.slice(4, 6) + '-' + td.slice(6, 8);
+    const storeDate = klt === 'weekly' ? snapToFriday(dateStr) : dateStr;
 
-    if (result) {
-      result.concepts = conceptsMap?.[tsCode] || [];
-      hits.push(result);
+    // 周线去重：同一个周五只算一次
+    if (screenDateSet.has(storeDate)) continue;
+
+    const hits = [];
+    for (const [tsCode, allBars] of klineMap) {
+      const stock = stockMap.get(tsCode);
+      if (!stock) continue;
+
+      // 找到 <= td 的最后一根 bar 的位置
+      let cutoff = allBars.length - 1;
+      while (cutoff >= 0 && allBars[cutoff].trade_date > td) cutoff--;
+      if (cutoff < minBars - 1) continue;
+
+      const result = screenStock({
+        ...stock,
+        klines: allBars.slice(0, cutoff + 1).map(k => ({
+          open: k.open, high: k.high, low: k.low, close: k.close, vol: k.vol,
+        })),
+      }, { noFilter: true });
+
+      if (result) {
+        result.concepts = conceptsMap?.[tsCode] || [];
+        hits.push(result);
+      }
+    }
+
+    await redisSet(KEY.screenResult(storeDate, klt), hits, screenTTL);
+    screenDateSet.add(storeDate);
+    screenDates.push(storeDate);
+    lastHitCount = hits.length;
+
+    if (screenDates.length % 5 === 0 || vi === validDates.length - 1) {
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+      console.log(`  ${screenDates.length}/${validDates.length}，${storeDate} 命中 ${hits.length} 只，${elapsed}s`);
     }
   }
 
-  console.log(`  命中 ${hits.length} 只，跳过 ${skipped} 只（非活跃/ST）`);
+  console.log(`  回测完成：${screenDates.length} 个交易日写入 Redis`);
 
-  // 5. 写入 Redis
-  console.log('5. 写入 Redis...');
-  const storeDate = klt === 'weekly' ? snapToFriday(targetDate) : targetDate;
-  const screenTTL = klt === 'daily' ? TTL.SCREEN_RESULT_DAILY : TTL.SCREEN_RESULT_WEEKLY;
+  // 5. 更新 scan:dates / stocks:list / scan:meta
+  console.log('5. 更新元数据...');
+  const allDatesDesc = [...screenDates].reverse(); // newest first
+  await redisSet(KEY.scanDates(klt), allDatesDesc, screenTTL);
+  console.log(`  scan:dates:${klt} → ${allDatesDesc.length} 个日期`);
 
-  await redisSet(KEY.screenResult(storeDate, klt), hits, screenTTL);
-  console.log(`  screen:${storeDate}:${klt} → ${hits.length} 条`);
-
-  // 更新 scan:dates
-  if (!isWeekend(targetDate)) {
-    const maxLen = klt === 'daily' ? 10 : 8;
-    const dates = (await redisGet(KEY.scanDates(klt))) || [];
-    const filtered = dates.filter(d => d !== storeDate);
-    filtered.unshift(storeDate);
-    if (filtered.length > maxLen) filtered.length = maxLen;
-    await redisSet(KEY.scanDates(klt), filtered, screenTTL);
-    console.log(`  scan:dates:${klt} → [${filtered.join(', ')}]`);
-  }
-
-  // 更新 stocks:list 和 scan:meta
   await redisSet(KEY.STOCKS, stocks, TTL.STOCKS);
   await redisSet(KEY.META, { lastDate: targetDate, lastTime: new Date().toISOString() });
+
+  // 6. 写入 kl:{tsCode}:{klt} K线缓存（后验分析用，含 vol）
+  console.log('6. 写入 K线缓存到 Redis（后验分析用）...');
+  let klWritten = 0;
+  const klEntries = [...klineMap.entries()];
+  for (let i = 0; i < klEntries.length; i++) {
+    const [tsCode, klines] = klEntries[i];
+    // klines 已按 trade_date 升序，每根含 ts_code/trade_date/open/high/low/close/vol
+    try {
+      await redisSet(KEY.kline(tsCode, klt), klines, TTL.KLINE);
+      klWritten++;
+    } catch (err) {
+      if (i < 3) console.error(`  ⚠ ${tsCode} 写入失败: ${err.message}`);
+    }
+    // 每 500 只打印一次进度
+    if ((i + 1) % 500 === 0 || i === klEntries.length - 1) {
+      console.log(`  K线缓存: ${i + 1}/${klEntries.length} (写入 ${klWritten})`);
+    }
+  }
+  console.log(`  K线缓存写入完成: ${klWritten} 只股票`);
 
   const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
   console.log(`\n=== 完成 ===`);
   console.log(`总耗时: ${elapsed}s`);
-  console.log(`命中: ${hits.length} / ${klineMap.size} 只\n`);
+  console.log(`回测: ${screenDates.length} 个交易日，最新日 ${screenDates[screenDates.length - 1] || '-'} 命中 ${lastHitCount} 只`);
+  console.log(`K线缓存: ${klWritten} / ${klineMap.size} 只\n`);
 }
 
 main().catch(err => { console.error(err); process.exit(1); });

@@ -10,6 +10,7 @@ export default function usePostAnalysis(date, klt) {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(null);
   const timerRef = useRef(null);
+  const lastCodesRef = useRef(null);
 
   // core: strategies/filters change → instant recalc, zero network
   const result = useMemo(
@@ -19,6 +20,13 @@ export default function usePostAnalysis(date, klt) {
 
   const start = useCallback(async (tsCodes, reset = false) => {
     if (!date || !tsCodes?.length) return;
+
+    // auto-reset if stock list changed since last analysis
+    const codesKey = tsCodes.map(t => t.tsCode).sort().join(',');
+    if (lastCodesRef.current && lastCodesRef.current !== codesKey) {
+      reset = true;
+    }
+    lastCodesRef.current = codesKey;
 
     setLoading(true);
     setProgress(null);
@@ -38,6 +46,7 @@ export default function usePostAnalysis(date, klt) {
     const poll = async () => {
       try {
         const res = await triggerPostAnalysis({ date, klt, window, tsCodes, reset });
+        reset = false; // only reset on first call, not subsequent polls
         setProgress(res.done ? null : { idx: res.idx, total: res.total });
 
         if (res.done && res.data) {
