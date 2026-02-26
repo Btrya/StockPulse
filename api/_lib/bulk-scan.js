@@ -32,6 +32,7 @@ export async function bulkScan({
 } = {}) {
   // 读取进度
   let progress = await redis.get(progressKey);
+  console.log(`[bulk] init | today=${today} klt=${inputKlt || 'auto'} existing_progress=${progress ? `date=${progress.date},phase=${progress.phase},klt=${progress.klt}` : 'null'} forceReset=${!!forceReset}`);
 
   // stale 检测（仅 scan 模式：盘中开始的进度在收盘后应重置）
   if (progress && progress.date === today && !forceReset && progressKey === KEY.BULK_PROGRESS) {
@@ -43,6 +44,7 @@ export async function bulkScan({
   }
 
   if (forceReset || !progress || progress.date !== today) {
+    console.log(`[bulk] reset progress | reason=${forceReset ? 'forceReset' : !progress ? 'no_progress' : `date_mismatch(${progress.date}!=${today})`}`);
     // 获取股票列表
     const stocks = (await getStockList()).filter(s => !s.name.includes('ST') && !s.name.includes('退'));
     await redis.set(KEY.STOCKS, stocks, TTL.STOCKS);
@@ -86,8 +88,10 @@ export async function bulkScan({
     if (klt === 'daily' && progressKey === KEY.BULK_PROGRESS) {
       const todayFmt = today.replace(/-/g, '');
       const latestDate = tradingDates[tradingDates.length - 1];
+      console.log(`[bulk] date check | klt=${klt} todayFmt=${todayFmt} latestDate=${latestDate} tradingDates.length=${tradingDates.length} last5=${tradingDates.slice(-5).join(',')}`);
       if (latestDate !== todayFmt) {
         // tushare 尚未发布今天的数据，放弃本轮，等下次 cron 重试
+        console.log(`[bulk] WAITING — tushare data not ready, skipping this round`);
         return { done: false, klt, phase: 'waiting', reason: `tushare latest=${latestDate}, today=${todayFmt}`, elapsed: Date.now() - startTime };
       }
     }
@@ -180,6 +184,7 @@ export async function bulkScan({
   // 写入结果
   const screenTTL = klt === 'daily' ? TTL.SCREEN_RESULT_DAILY : TTL.SCREEN_RESULT_WEEKLY;
   const storeDate = klt === 'weekly' ? snapToFriday(today) : today;
+  console.log(`[bulk] compute done | klt=${klt} storeDate=${storeDate} hits=${hits.length} stocks_in_klineMap=${klineMap.size} tradingDates_range=${tradingDates[0]}..${tradingDates[tradingDates.length - 1]}`);
   await redis.set(KEY.screenResult(storeDate, klt), hits, screenTTL);
 
   // 更新 scan:dates（backtest 跳过）

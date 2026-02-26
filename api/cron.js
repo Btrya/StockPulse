@@ -14,7 +14,9 @@ export default async function handler(req, res) {
   }
 
   const startTime = Date.now();
+  const now = new Date();
   const today = getLastTradingDate();
+  console.log(`[cron] start | now=${now.toISOString()} today=${today} getCNDate=${getCNDate(now)}`);
 
   try {
     if (!redis.isConfigured()) {
@@ -24,6 +26,7 @@ export default async function handler(req, res) {
     // ── 批量模式：按日期拉全市场 ──
     if (TUSHARE_BULK) {
       const result = await bulkScan({ today, startTime });
+      console.log(`[cron] bulkScan result | phase=${result.phase} klt=${result.klt} done=${result.done} reason=${result.reason || '-'} hits=${result.hits ?? '-'}`);
       if (!result.done && result.phase !== 'waiting') {
         const proto = req.headers['x-forwarded-proto'] || 'https';
         const selfUrl = `${proto}://${req.headers.host}/api/cron`;
