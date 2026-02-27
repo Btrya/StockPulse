@@ -68,6 +68,63 @@ export const STRATEGIES = {
 // 默认启用的策略（保持现有行为：J值低位 AND 触碰趋势线）
 export const DEFAULT_STRATEGIES = ['lowJ', 'nearLine', 'shortAboveBull'];
 
+// ── 量价入场条件 ─────────────────────────────────────────
+
+function computeVolumeFlags(klines, closes, shortTrend) {
+  const screenIdx = klines.length - 1;
+  // vol 缺失 → 全部降级 false
+  if (!klines[screenIdx].vol) {
+    return { closeAboveShort: false, hasVolumeDouble: false, hasShrinkingPullback: false, hasConsecutiveShrink: false };
+  }
+
+  const start = Math.max(0, screenIdx - 30);
+  const bars = klines.slice(start, screenIdx + 1);
+
+  // 1. closeAboveShort — shortTrend 已经算过，直接复用
+  const closeAboveShort = shortTrend != null && closes[screenIdx] > shortTrend;
+
+  // 2. hasVolumeDouble — 任意一天 vol >= 2x 前一天
+  let hasVolumeDouble = false;
+  for (let i = 1; i < bars.length; i++) {
+    if (bars[i - 1].vol > 0 && bars[i].vol >= 2 * bars[i - 1].vol) {
+      hasVolumeDouble = true;
+      break;
+    }
+  }
+
+  // 3. hasShrinkingPullback — 高点后阴线缩量
+  let peakIdx = 0;
+  for (let i = 1; i < bars.length; i++) {
+    if (bars[i].close > bars[peakIdx].close) peakIdx = i;
+  }
+  let maxBullVol = 0;
+  for (let i = 0; i <= peakIdx; i++) {
+    if (bars[i].close > bars[i].open && bars[i].vol > maxBullVol)
+      maxBullVol = bars[i].vol;
+  }
+  let hasShrinkingPullback = false;
+  if (maxBullVol > 0) {
+    let bearCount = 0, allShrink = true;
+    for (let i = peakIdx + 1; i < bars.length && bearCount < 2; i++) {
+      if (bars[i].close < bars[i].open) {
+        bearCount++;
+        if (bars[i].vol >= maxBullVol * 0.75) { allShrink = false; break; }
+      }
+    }
+    hasShrinkingPullback = bearCount > 0 && allShrink;
+  }
+
+  // 4. hasConsecutiveShrink — 连续3天 close↓ AND vol↓
+  let hasConsecutiveShrink = false, streak = 0;
+  for (let i = 1; i < bars.length; i++) {
+    if (bars[i].close < bars[i - 1].close && bars[i].vol < bars[i - 1].vol) {
+      if (++streak >= 3) { hasConsecutiveShrink = true; break; }
+    } else { streak = 0; }
+  }
+
+  return { closeAboveShort, hasVolumeDouble, hasShrinkingPullback, hasConsecutiveShrink };
+}
+
 // ── 指标计算（不变） ──────────────────────────────────────
 
 // 对单只股票计算指标
@@ -153,6 +210,9 @@ export function screenStock(stock, opts = {}) {
     consecutiveCount++;
   }
 
+  // ── volume flags（入场条件） ──
+  const volFlags = computeVolumeFlags(klines, closes, shortTrend);
+
   return {
     code,
     ts_code,
@@ -182,6 +242,7 @@ export function screenStock(stock, opts = {}) {
     limitUp,
     limitUpPrev,
     consecutiveCount,
+    ...volFlags,
   };
 }
 
@@ -204,6 +265,7 @@ export function applyStrategies(r, params, strategyIds = DEFAULT_STRATEGIES, com
 export function filterResults(results, {
   jThreshold, tolerance, industries, excludeBoards, concepts,
   strategies, combinator, line, weeklyBull, weeklyLowJ, dailyLowJ,
+  closeAboveShort, hasVolumeDouble, hasShrinkingPullback, hasConsecutiveShrink,
 } = {}) {
   const sIds = strategies || DEFAULT_STRATEGIES;
   const comb = combinator || 'AND';
@@ -222,6 +284,11 @@ export function filterResults(results, {
     if (weeklyBull && r.weeklyBull !== true) return false;
     if (weeklyLowJ && !(r.weeklyJ != null && r.weeklyJ < 13)) return false;
     if (dailyLowJ && !(r.dailyJ != null && r.dailyJ < 13)) return false;
+    // 入场条件过滤
+    if (closeAboveShort && r.closeAboveShort !== true) return false;
+    if (hasVolumeDouble && r.hasVolumeDouble !== true) return false;
+    if (hasShrinkingPullback && r.hasShrinkingPullback !== true) return false;
+    if (hasConsecutiveShrink && r.hasConsecutiveShrink !== true) return false;
     return applyStrategies(r, params, sIds, comb);
   });
 }

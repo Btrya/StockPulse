@@ -46,6 +46,10 @@ export default async function handler(req, res) {
     const weeklyBull = req.query.weeklyBull === '1';
     const weeklyLowJ = req.query.weeklyLowJ === '1';
     const dailyLowJ = req.query.dailyLowJ === '1';
+    const closeAboveShort = req.query.closeAboveShort === '1';
+    const hasVolumeDouble = req.query.hasVolumeDouble === '1';
+    const hasShrinkingPullback = req.query.hasShrinkingPullback === '1';
+    const hasConsecutiveShrink = req.query.hasConsecutiveShrink === '1';
 
     // 尝试从 Redis 读取扫描结果
     let data = null;
@@ -83,10 +87,11 @@ export default async function handler(req, res) {
     }
 
     // 从 Redis 读概念映射，动态附加到每条结果（不依赖扫描时写入）
-    if (data && data.length && redis.isConfigured()) {
+    let conceptsMap = null;
+    if (redis.isConfigured()) {
       try {
-        const conceptsMap = await redis.get(KEY.CONCEPTS_MAP);
-        if (conceptsMap) {
+        conceptsMap = await redis.get(KEY.CONCEPTS_MAP);
+        if (conceptsMap && data && data.length) {
           for (const r of data) {
             r.concepts = conceptsMap[r.ts_code] || [];
           }
@@ -137,6 +142,20 @@ export default async function handler(req, res) {
       }
     }
 
+    // 提取所有概念（优先从 data 中提取，fallback 到 conceptsMap 的所有值）
+    let allConcepts;
+    if (data && data.length) {
+      allConcepts = [...new Set(data.flatMap(r => r.concepts || []))].sort(
+        (a, b) => a.localeCompare(b, 'zh-CN')
+      );
+    } else if (conceptsMap) {
+      allConcepts = [...new Set(Object.values(conceptsMap).flat())].sort(
+        (a, b) => a.localeCompare(b, 'zh-CN')
+      );
+    } else {
+      allConcepts = [];
+    }
+
     if (!data) {
       return res.json({
         data: [],
@@ -145,16 +164,11 @@ export default async function handler(req, res) {
           cached: false,
           message: '暂无扫描数据，请等待定时任务执行或手动触发扫描',
           industries: allIndustries,
-          concepts: [],
+          concepts: allConcepts,
           boards: MARKET_BOARDS.map(b => ({ code: b.code, name: b.name })),
         },
       });
     }
-
-    // 提取所有概念（去重排序）
-    const allConcepts = [...new Set(data.flatMap(r => r.concepts || []))].sort(
-      (a, b) => a.localeCompare(b, 'zh-CN')
-    );
 
     const filtered = filterResults(data, { jThreshold: j, tolerance, industries, excludeBoards, concepts, strategies, combinator, line, weeklyBull, weeklyLowJ, dailyLowJ });
 
