@@ -103,7 +103,14 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             <Radio.Group
               options={KLT_OPTIONS}
               value={params.klt}
-              onChange={e => update('klt', e.target.value)}
+              onChange={e => {
+                const v = e.target.value;
+                // 切换周期时清除对方的跨周期条件
+                const clear = v === 'weekly'
+                  ? { weeklyBull: false, weeklyLowJ: false }
+                  : { dailyLowJ: false };
+                setParams(prev => ({ ...prev, klt: v, ...clear }));
+              }}
               optionType="button"
               buttonStyle="solid"
               size="middle"

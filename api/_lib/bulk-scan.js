@@ -151,6 +151,14 @@ export async function bulkScan({
   }
 
   // ── Phase compute ────────────────────────────────────
+  // 探测临时 key 是否还存在：被另一个并发实例清理后应跳过
+  const probeKey = tempKey(tradingDates[0]);
+  const probeExists = await redis.get(probeKey);
+  if (!probeExists) {
+    await log(`[bulk] SKIP compute — temp key ${probeKey} already cleaned by another instance`);
+    return { done: true, klt, phase: 'skip', reason: 'temp_keys_cleaned', elapsed: Date.now() - startTime };
+  }
+
   // 并行批量读回所有临时 key → 按 ts_code 分组
   const klineMap = new Map();
   for (let i = 0; i < totalDates; i += PARALLEL) {
@@ -194,7 +202,14 @@ export async function bulkScan({
   const screenTTL = klt === 'daily' ? TTL.SCREEN_RESULT_DAILY : TTL.SCREEN_RESULT_WEEKLY;
   const storeDate = klt === 'weekly' ? snapToFriday(today) : today;
   await log(`[bulk] compute done | klt=${klt} storeDate=${storeDate} hits=${hits.length} stocks_in_klineMap=${klineMap.size} tradingDates_range=${tradingDates[0]}..${tradingDates[tradingDates.length - 1]}`);
-  await redis.set(KEY.screenResult(storeDate, klt), hits, screenTTL);
+
+  // 防止并发 compute 覆盖有效数据：临时 key 被另一个实例清理后
+  // compute 会产出 hits=0 的空结果，此时跳过写入避免覆盖
+  if (hits.length === 0 && klineMap.size > 0) {
+    await log(`[bulk] SKIP write — hits=0 but ${klineMap.size} stocks in klineMap, likely stale compute (temp keys already cleaned by another instance)`);
+  } else {
+    await redis.set(KEY.screenResult(storeDate, klt), hits, screenTTL);
+  }
 
   // 更新 scan:dates（backtest 跳过）
   if (!skipScanDates && !isWeekend(today)) {
