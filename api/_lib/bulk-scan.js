@@ -13,12 +13,25 @@ import { KEY, TTL, TUSHARE_DELAY_MS, isWeekend, snapToFriday } from './constants
 const TIMEOUT_MS = 45000; // 留 5s 余量给 Vercel 50s 限制
 const BULK_TTL = 3600;    // 临时 key 1h 过期（兜底清理）
 const PARALLEL = 10;      // Redis 并行读/删批次大小
+const LOG_KEY = 'bulk:log'; // 持久日志 key，Redis 里可以随时查看
 
 // 并行批量执行，每批 size 个
 async function parallel(items, fn, size = PARALLEL) {
   for (let i = 0; i < items.length; i += size) {
     await Promise.all(items.slice(i, i + size).map(fn));
   }
+}
+
+// 日志写入 console + Redis（追加，最多保留 50 条，TTL 24h）
+async function log(msg) {
+  const line = `${new Date().toISOString()} ${msg}`;
+  console.log(line);
+  try {
+    const logs = (await redis.get(LOG_KEY)) || [];
+    logs.push(line);
+    if (logs.length > 50) logs.splice(0, logs.length - 50);
+    await redis.set(LOG_KEY, logs, 86400);
+  } catch {}
 }
 
 export async function bulkScan({
@@ -32,7 +45,7 @@ export async function bulkScan({
 } = {}) {
   // 读取进度
   let progress = await redis.get(progressKey);
-  console.log(`[bulk] init | today=${today} klt=${inputKlt || 'auto'} existing_progress=${progress ? `date=${progress.date},phase=${progress.phase},klt=${progress.klt}` : 'null'} forceReset=${!!forceReset}`);
+  await log(`[bulk] init | today=${today} klt=${inputKlt || 'auto'} existing_progress=${progress ? `date=${progress.date},phase=${progress.phase},klt=${progress.klt}` : 'null'} forceReset=${!!forceReset}`);
 
   // stale 检测（仅 scan 模式：盘中开始的进度在收盘后应重置）
   if (progress && progress.date === today && !forceReset && progressKey === KEY.BULK_PROGRESS) {
@@ -44,7 +57,7 @@ export async function bulkScan({
   }
 
   if (forceReset || !progress || progress.date !== today) {
-    console.log(`[bulk] reset progress | reason=${forceReset ? 'forceReset' : !progress ? 'no_progress' : `date_mismatch(${progress.date}!=${today})`}`);
+    await log(`[bulk] reset progress | reason=${forceReset ? 'forceReset' : !progress ? 'no_progress' : `date_mismatch(${progress.date}!=${today})`}`);
     // 获取股票列表
     const stocks = (await getStockList()).filter(s => !s.name.includes('ST') && !s.name.includes('退'));
     await redis.set(KEY.STOCKS, stocks, TTL.STOCKS);
@@ -83,16 +96,23 @@ export async function bulkScan({
     } else {
       tradingDates = await getTradingDates(today, lookbackBars);
     }
-    // 检查 tushare 是否已有 today 的数据（日线：最新交易日须 === today）
+    // 检查 tushare 今天的行情数据是否已就绪（交易日历有 ≠ 行情出来了）
     // 周线不检查：周线按周聚合，当周五还没到也正常
     if (klt === 'daily' && progressKey === KEY.BULK_PROGRESS) {
       const todayFmt = today.replace(/-/g, '');
       const latestDate = tradingDates[tradingDates.length - 1];
-      console.log(`[bulk] date check | klt=${klt} todayFmt=${todayFmt} latestDate=${latestDate} tradingDates.length=${tradingDates.length} last5=${tradingDates.slice(-5).join(',')}`);
+      // 先检查交易日历里有没有今天
       if (latestDate !== todayFmt) {
-        // tushare 尚未发布今天的数据，放弃本轮，等下次 cron 重试
-        console.log(`[bulk] WAITING — tushare data not ready, skipping this round`);
-        return { done: false, klt, phase: 'waiting', reason: `tushare latest=${latestDate}, today=${todayFmt}`, elapsed: Date.now() - startTime };
+        await log(`[bulk] WAITING — today not in trade_cal | latest=${latestDate} today=${todayFmt}`);
+        return { done: false, klt, phase: 'waiting', reason: `trade_cal latest=${latestDate}, today=${todayFmt}`, elapsed: Date.now() - startTime };
+      }
+      // 交易日历有今天，但行情数据可能还没出——实际拉一下验证
+      const probe = await getDailyByDate(todayFmt);
+      await log(`[bulk] date check | todayFmt=${todayFmt} latestDate=${latestDate} probe_rows=${probe?.length || 0}`);
+      if (!probe || probe.length < 100) {
+        // 正常交易日全市场应有 5000+ 行，<100 说明数据还没出
+        await log(`[bulk] WAITING — daily data not ready | probe=${probe?.length || 0} rows`);
+        return { done: false, klt, phase: 'waiting', reason: `daily probe=${probe?.length || 0}, need 100+`, elapsed: Date.now() - startTime };
       }
     }
 
@@ -184,7 +204,7 @@ export async function bulkScan({
   // 写入结果
   const screenTTL = klt === 'daily' ? TTL.SCREEN_RESULT_DAILY : TTL.SCREEN_RESULT_WEEKLY;
   const storeDate = klt === 'weekly' ? snapToFriday(today) : today;
-  console.log(`[bulk] compute done | klt=${klt} storeDate=${storeDate} hits=${hits.length} stocks_in_klineMap=${klineMap.size} tradingDates_range=${tradingDates[0]}..${tradingDates[tradingDates.length - 1]}`);
+  await log(`[bulk] compute done | klt=${klt} storeDate=${storeDate} hits=${hits.length} stocks_in_klineMap=${klineMap.size} tradingDates_range=${tradingDates[0]}..${tradingDates[tradingDates.length - 1]}`);
   await redis.set(KEY.screenResult(storeDate, klt), hits, screenTTL);
 
   // 更新 scan:dates（backtest 跳过）
