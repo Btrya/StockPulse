@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { fetchResults } from '../lib/api';
 import { getLastTradingDate } from '../lib/date';
 
-const DEFAULTS = { klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false };
+const DEFAULTS = { klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, closeAboveShort: false, hasVolumeDouble: false, hasShrinkingPullback: false, hasConsecutiveShrink: false };
 
 function readURL() {
   const sp = new URLSearchParams(window.location.search);
@@ -16,6 +16,10 @@ function readURL() {
     weeklyBull: sp.get('weeklyBull') === '1',
     weeklyLowJ: sp.get('weeklyLowJ') === '1',
     dailyLowJ: sp.get('dailyLowJ') === '1',
+    closeAboveShort: sp.get('closeAboveShort') === '1',
+    hasVolumeDouble: sp.get('hasVolumeDouble') === '1',
+    hasShrinkingPullback: sp.get('hasShrinkingPullback') === '1',
+    hasConsecutiveShrink: sp.get('hasConsecutiveShrink') === '1',
   };
 }
 
@@ -30,6 +34,10 @@ function writeURL(params) {
   if (params.weeklyBull) sp.set('weeklyBull', '1');
   if (params.weeklyLowJ) sp.set('weeklyLowJ', '1');
   if (params.dailyLowJ) sp.set('dailyLowJ', '1');
+  if (params.closeAboveShort) sp.set('closeAboveShort', '1');
+  if (params.hasVolumeDouble) sp.set('hasVolumeDouble', '1');
+  if (params.hasShrinkingPullback) sp.set('hasShrinkingPullback', '1');
+  if (params.hasConsecutiveShrink) sp.set('hasConsecutiveShrink', '1');
   const qs = sp.toString();
   const url = qs ? `?${qs}` : window.location.pathname;
   window.history.replaceState(null, '', url);

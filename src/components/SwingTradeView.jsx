@@ -23,6 +23,10 @@ export default function SwingTradeView({
   upperLeBody, setUpperLeBody,
   weeklyBull, setWeeklyBull,
   weeklyLowJ, setWeeklyLowJ,
+  closeAboveShort, setCloseAboveShort,
+  hasVolumeDouble, setHasVolumeDouble,
+  hasShrinkingPullback, setHasShrinkingPullback,
+  hasConsecutiveShrink, setHasConsecutiveShrink,
   results, rawTotal, meta, loading,
   hotData,
 }) {
@@ -152,6 +156,42 @@ export default function SwingTradeView({
               size="small"
             />
             <span className="text-slate-400">周线低位</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Switch
+              checked={closeAboveShort}
+              onChange={setCloseAboveShort}
+              size="small"
+            />
+            <span className="text-slate-400">收盘&gt;短趋</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Switch
+              checked={hasVolumeDouble}
+              onChange={setHasVolumeDouble}
+              size="small"
+            />
+            <span className="text-slate-400">倍量</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Switch
+              checked={hasShrinkingPullback}
+              onChange={setHasShrinkingPullback}
+              size="small"
+            />
+            <span className="text-slate-400">缩量回踩</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Switch
+              checked={hasConsecutiveShrink}
+              onChange={setHasConsecutiveShrink}
+              size="small"
+            />
+            <span className="text-slate-400">连续缩量</span>
           </div>
         </div>
       )}

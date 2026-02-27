@@ -29,6 +29,10 @@ export default function useSwingTrade() {
   const [upperLeBody, setUpperLeBody] = useState(false); // 上影线≤实体
   const [weeklyBull, setWeeklyBull] = useState(false);   // 周线多头趋势
   const [weeklyLowJ, setWeeklyLowJ] = useState(false);  // 周线低位
+  const [closeAboveShort, setCloseAboveShort] = useState(false);
+  const [hasVolumeDouble, setHasVolumeDouble] = useState(false);
+  const [hasShrinkingPullback, setHasShrinkingPullback] = useState(false);
+  const [hasConsecutiveShrink, setHasConsecutiveShrink] = useState(false);
 
   const [rawResults, setRawResults] = useState([]);   // 后端原始结果
   const [meta, setMeta] = useState(null);
@@ -99,9 +103,14 @@ export default function useSwingTrade() {
       if (weeklyBull && r.weeklyBull !== true) return false;
       // 周线低位
       if (weeklyLowJ && !(r.weeklyJ != null && r.weeklyJ < 13)) return false;
+      // 入场条件
+      if (closeAboveShort && r.closeAboveShort !== true) return false;
+      if (hasVolumeDouble && r.hasVolumeDouble !== true) return false;
+      if (hasShrinkingPullback && r.hasShrinkingPullback !== true) return false;
+      if (hasConsecutiveShrink && r.hasConsecutiveShrink !== true) return false;
       return true;
     });
-  }, [rawResults, subTab, maxGain, maxJ, arrangement, nearLine, redGtGreen, upperLeBody, weeklyBull, weeklyLowJ]);
+  }, [rawResults, subTab, maxGain, maxJ, arrangement, nearLine, redGtGreen, upperLeBody, weeklyBull, weeklyLowJ, closeAboveShort, hasVolumeDouble, hasShrinkingPullback, hasConsecutiveShrink]);
 
   return {
     subTab, setSubTab,
@@ -117,6 +126,10 @@ export default function useSwingTrade() {
     upperLeBody, setUpperLeBody,
     weeklyBull, setWeeklyBull,
     weeklyLowJ, setWeeklyLowJ,
+    closeAboveShort, setCloseAboveShort,
+    hasVolumeDouble, setHasVolumeDouble,
+    hasShrinkingPullback, setHasShrinkingPullback,
+    hasConsecutiveShrink, setHasConsecutiveShrink,
     results, rawResults, meta, loading,
     refresh,
   };

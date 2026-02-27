@@ -170,7 +170,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const filtered = filterResults(data, { jThreshold: j, tolerance, industries, excludeBoards, concepts, strategies, combinator, line, weeklyBull, weeklyLowJ, dailyLowJ });
+    const filtered = filterResults(data, { jThreshold: j, tolerance, industries, excludeBoards, concepts, strategies, combinator, line, weeklyBull, weeklyLowJ, dailyLowJ, closeAboveShort, hasVolumeDouble, hasShrinkingPullback, hasConsecutiveShrink });
 
     filtered.sort((a, b) => {
       const va = a[sort] ?? 0;

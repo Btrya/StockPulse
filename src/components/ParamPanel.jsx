@@ -162,6 +162,38 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </div>
           )}
 
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-slate-400">收盘&gt;短趋</span>
+            <Switch
+              checked={params.closeAboveShort}
+              onChange={v => update('closeAboveShort', v)}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-slate-400">倍量</span>
+            <Switch
+              checked={params.hasVolumeDouble}
+              onChange={v => update('hasVolumeDouble', v)}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-slate-400">缩量回踩</span>
+            <Switch
+              checked={params.hasShrinkingPullback}
+              onChange={v => update('hasShrinkingPullback', v)}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-slate-400">连续缩量</span>
+            <Switch
+              checked={params.hasConsecutiveShrink}
+              onChange={v => update('hasConsecutiveShrink', v)}
+            />
+          </div>
+
           <Space>
             <Button
               type="primary"
@@ -173,7 +205,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </Button>
             <Button
               icon={<ReloadOutlined />}
-              onClick={() => { setParams({ klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false }); setDate(getLastTradingDate()); }}
+              onClick={() => { setParams({ klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, closeAboveShort: false, hasVolumeDouble: false, hasShrinkingPullback: false, hasConsecutiveShrink: false }); setDate(getLastTradingDate()); }}
             >
               重置
             </Button>

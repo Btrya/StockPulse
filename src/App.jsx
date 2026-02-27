@@ -122,6 +122,14 @@ export default function App() {
           setWeeklyBull={swingTrade.setWeeklyBull}
           weeklyLowJ={swingTrade.weeklyLowJ}
           setWeeklyLowJ={swingTrade.setWeeklyLowJ}
+          closeAboveShort={swingTrade.closeAboveShort}
+          setCloseAboveShort={swingTrade.setCloseAboveShort}
+          hasVolumeDouble={swingTrade.hasVolumeDouble}
+          setHasVolumeDouble={swingTrade.setHasVolumeDouble}
+          hasShrinkingPullback={swingTrade.hasShrinkingPullback}
+          setHasShrinkingPullback={swingTrade.setHasShrinkingPullback}
+          hasConsecutiveShrink={swingTrade.hasConsecutiveShrink}
+          setHasConsecutiveShrink={swingTrade.setHasConsecutiveShrink}
           results={swingTrade.results}
           rawTotal={swingTrade.rawResults.length}
           meta={swingTrade.meta}

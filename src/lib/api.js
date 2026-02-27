@@ -20,6 +20,10 @@ export function fetchResults(params) {
   if (params.weeklyBull) qs.set('weeklyBull', '1');
   if (params.weeklyLowJ) qs.set('weeklyLowJ', '1');
   if (params.dailyLowJ) qs.set('dailyLowJ', '1');
+  if (params.closeAboveShort) qs.set('closeAboveShort', '1');
+  if (params.hasVolumeDouble) qs.set('hasVolumeDouble', '1');
+  if (params.hasShrinkingPullback) qs.set('hasShrinkingPullback', '1');
+  if (params.hasConsecutiveShrink) qs.set('hasConsecutiveShrink', '1');
   if (params.combinator) qs.set('combinator', params.combinator);
   if (params.line) qs.set('line', params.line);
   return request(`/results?${qs}`);
