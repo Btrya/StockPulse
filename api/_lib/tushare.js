@@ -130,6 +130,21 @@ export async function getTradingDates(endDate, count) {
   return dates.slice(-count);
 }
 
+// 获取周线交易日列表（用蓝筹股反查 stk_weekly_monthly 的真实 trade_date）
+export async function getWeeklyTradeDates(endDate, count) {
+  const startD = new Date(endDate + 'T12:00:00Z');
+  startD.setDate(startD.getDate() - Math.ceil(count * 9)); // 每周~7天，留余量
+  const fmtDate = d => d.toISOString().slice(0, 10).replace(/-/g, '');
+  const data = await tushareRequest('stk_weekly_monthly', {
+    ts_code: '000001.SZ',
+    start_date: fmtDate(startD),
+    end_date: endDate.replace(/-/g, ''),
+    freq: 'week',
+  }, 'trade_date');
+  const dates = parseData(data).map(r => r.trade_date).sort();
+  return dates.slice(-count);
+}
+
 // 按交易日拉全市场日线
 export async function getDailyByDate(tradeDate) {
   const data = await tushareRequest('daily', {

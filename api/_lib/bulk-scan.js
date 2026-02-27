@@ -5,7 +5,7 @@
 // 调用方：
 //   scan/cron  → progressKey = KEY.BULK_PROGRESS
 //   backtest   → progressKey = KEY.BACKTEST_PROGRESS, skipScanDates = true
-import { getStockList, getTradingDates, getDailyByDate, getWeeklyByDate } from './tushare.js';
+import { getStockList, getTradingDates, getWeeklyTradeDates, getDailyByDate, getWeeklyByDate } from './tushare.js';
 import { screenStock } from './screener.js';
 import * as redis from './redis.js';
 import { KEY, TTL, TUSHARE_DELAY_MS, isWeekend, snapToFriday } from './constants.js';
@@ -81,18 +81,9 @@ export async function bulkScan({
   if (!progress.tradingDates) {
     let tradingDates;
     if (klt === 'weekly') {
-      // 周线需要 ~650 个交易日来覆盖 130 周
-      const allDates = await getTradingDates(today, lookbackBars * 5);
-      const weekMap = new Map();
-      for (const d of allDates) {
-        const dt = new Date(d.slice(0, 4) + '-' + d.slice(4, 6) + '-' + d.slice(6, 8));
-        const year = dt.getFullYear();
-        const jan1 = new Date(year, 0, 1);
-        const week = Math.ceil(((dt - jan1) / 86400000 + jan1.getDay() + 1) / 7);
-        const key = `${year}-W${week}`;
-        weekMap.set(key, d);
-      }
-      tradingDates = [...weekMap.values()].sort().slice(-lookbackBars);
+      // 直接用 stk_weekly_monthly 接口获取真实的周线 trade_date
+      // 该接口 trade_date 全部为周五，不能用 trade_cal 推算
+      tradingDates = await getWeeklyTradeDates(today, lookbackBars);
     } else {
       tradingDates = await getTradingDates(today, lookbackBars);
     }
