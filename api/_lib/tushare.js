@@ -72,11 +72,12 @@ export async function getDailyRange(tsCode, startDate, endDate) {
   return rows;
 }
 
-// 获取周线行情
+// 获取周线行情（日度更新接口，每天收盘后即有本周数据）
 export async function getWeekly(tsCode, startDate) {
-  const data = await tushareRequest('weekly', {
+  const data = await tushareRequest('stk_weekly_monthly', {
     ts_code: tsCode,
     start_date: startDate,
+    freq: 'week',
   }, 'trade_date,open,high,low,close,vol');
   const rows = parseData(data);
   rows.reverse();
@@ -85,10 +86,11 @@ export async function getWeekly(tsCode, startDate) {
 
 // 获取周线行情（指定日期范围）
 export async function getWeeklyRange(tsCode, startDate, endDate) {
-  const data = await tushareRequest('weekly', {
+  const data = await tushareRequest('stk_weekly_monthly', {
     ts_code: tsCode,
     start_date: startDate,
     end_date: endDate,
+    freq: 'week',
   }, 'trade_date,open,high,low,close,vol');
   const rows = parseData(data);
   rows.reverse();
@@ -136,10 +138,11 @@ export async function getDailyByDate(tradeDate) {
   return parseData(data);
 }
 
-// 按交易日拉全市场周线
+// 按交易日拉全市场周线（使用日度更新接口，每天收盘后即有本周数据）
 export async function getWeeklyByDate(tradeDate) {
-  const data = await tushareRequest('weekly', {
+  const data = await tushareRequest('stk_weekly_monthly', {
     trade_date: tradeDate,
+    freq: 'week',
   }, 'ts_code,trade_date,open,high,low,close,vol');
   return parseData(data);
 }

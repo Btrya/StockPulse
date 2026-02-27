@@ -100,8 +100,8 @@ export default function StatusBar({ klt }) {
 
   // 扫描中：显示进度 + 取消按钮
   if (scanning || status?.scanning) {
-    const idx = scanInfo?.idx || status?.progress?.idx || 0;
-    const total = scanInfo?.total || status?.progress?.total || 0;
+    const idx = scanInfo?.dateIdx ?? scanInfo?.idx ?? status?.progress?.idx ?? 0;
+    const total = scanInfo?.totalDates ?? scanInfo?.total ?? status?.progress?.total ?? 0;
     const scanKlt = scanInfo?.klt || status?.progress?.klt || '';
     const pct = total ? Math.round((idx / total) * 100) : 0;
     return (

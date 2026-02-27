@@ -14,10 +14,29 @@ export default async function handler(req, res) {
 
     const meta = await redis.get(KEY.META);
     const progress = await redis.get(KEY.PROGRESS);
+    const bulkProgress = await redis.get(KEY.BULK_PROGRESS);
 
-    const scanning = !!(progress && progress.currentKlt && progress.idx < (progress.stocks?.length || 0));
-    const total = progress?.stocks?.length || 0;
-    const idx = progress?.idx || 0;
+    // legacy 模式扫描中
+    const legacyScanning = !!(progress && progress.currentKlt && progress.idx < (progress.stocks?.length || 0));
+    // 批量模式扫描中
+    const bulkScanning = !!(bulkProgress && bulkProgress.phase && bulkProgress.phase !== 'done');
+
+    const scanning = legacyScanning || bulkScanning;
+
+    let scanProgress = null;
+    if (bulkScanning) {
+      scanProgress = {
+        idx: bulkProgress.dateIdx || 0,
+        total: bulkProgress.tradingDates?.length || 0,
+        klt: bulkProgress.klt || 'daily',
+      };
+    } else if (legacyScanning) {
+      scanProgress = {
+        idx: progress?.idx || 0,
+        total: progress?.stocks?.length || 0,
+        klt: progress.currentKlt,
+      };
+    }
 
     // 回测进度（兼容原逻辑和批量模式）
     const btProgress = await redis.get(KEY.BACKTEST_PROGRESS);
@@ -50,7 +69,7 @@ export default async function handler(req, res) {
       lastDate: meta?.lastDate ?? null,
       lastTime: meta?.lastTime ?? null,
       scanning,
-      progress: scanning ? { idx, total, klt: progress.currentKlt } : null,
+      progress: scanProgress,
       boards: MARKET_BOARDS.map(b => ({ code: b.code, name: b.name })),
       backtest,
     });

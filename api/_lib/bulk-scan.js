@@ -96,23 +96,15 @@ export async function bulkScan({
     } else {
       tradingDates = await getTradingDates(today, lookbackBars);
     }
-    // 检查 tushare 今天的行情数据是否已就绪（交易日历有 ≠ 行情出来了）
-    // 周线不检查：周线按周聚合，当周五还没到也正常
-    if (klt === 'daily' && progressKey === KEY.BULK_PROGRESS) {
+    // 检查 tushare 行情数据是否已就绪
+    // 始终用日线 probe：周线 tushare 可能要周六才出，但日线收盘后就有
+    if (progressKey === KEY.BULK_PROGRESS) {
       const todayFmt = today.replace(/-/g, '');
-      const latestDate = tradingDates[tradingDates.length - 1];
-      // 先检查交易日历里有没有今天
-      if (latestDate !== todayFmt) {
-        await log(`[bulk] WAITING — today not in trade_cal | latest=${latestDate} today=${todayFmt}`);
-        return { done: false, klt, phase: 'waiting', reason: `trade_cal latest=${latestDate}, today=${todayFmt}`, elapsed: Date.now() - startTime };
-      }
-      // 交易日历有今天，但行情数据可能还没出——实际拉一下验证
       const probe = await getDailyByDate(todayFmt);
-      await log(`[bulk] date check | todayFmt=${todayFmt} latestDate=${latestDate} probe_rows=${probe?.length || 0}`);
+      await log(`[bulk] probe | klt=${klt} todayFmt=${todayFmt} probe_rows=${probe?.length || 0} last5dates=${tradingDates.slice(-5).join(',')}`);
       if (!probe || probe.length < 100) {
-        // 正常交易日全市场应有 5000+ 行，<100 说明数据还没出
-        await log(`[bulk] WAITING — daily data not ready | probe=${probe?.length || 0} rows`);
-        return { done: false, klt, phase: 'waiting', reason: `daily probe=${probe?.length || 0}, need 100+`, elapsed: Date.now() - startTime };
+        await log(`[bulk] WAITING — daily data not ready | rows=${probe?.length || 0}`);
+        return { done: false, klt, phase: 'waiting', reason: `daily probe ${todayFmt}=${probe?.length || 0} rows`, elapsed: Date.now() - startTime };
       }
     }
 
@@ -140,8 +132,14 @@ export async function bulkScan({
       try {
         const rows = await fetchFn(td);
         await redis.set(tempKey(td), rows, BULK_TTL);
+        // 记录最后 3 个日期的实际数据情况
+        if (dateIdx >= totalDates - 3) {
+          const sample = rows?.length ? rows.find(r => r.ts_code === '300155.SZ') : null;
+          await log(`[bulk] fetch | klt=${klt} td=${td} rows=${rows?.length || 0} sample_300155=${sample ? JSON.stringify({ close: sample.close, trade_date: sample.trade_date }) : 'null'}`);
+        }
       } catch {
         // 单日失败跳过
+        await log(`[bulk] fetch FAIL | klt=${klt} td=${td}`);
       }
 
       dateIdx++;

@@ -54,16 +54,7 @@ export default async function handler(req, res) {
         singleKlt: !!requestedKlt,
         forceReset,
       });
-      if (!result.done) {
-        const proto = req.headers['x-forwarded-proto'] || 'https';
-        const selfUrl = `${proto}://${req.headers.host}/api/scan`;
-        const headers = { 'Content-Type': 'application/json' };
-        fetch(selfUrl, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({}),
-        }).catch(() => {});
-      }
+      // 不 self-call：前端 500ms 轮询驱动续扫，避免并发竞争
       return res.json({ ...result, needContinue: !result.done });
     }
 
