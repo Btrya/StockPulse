@@ -65,6 +65,20 @@ export default async function handler(req, res) {
       }
     }
 
+    // debug=1 返回 bulk:log 日志（替代已删除的 debug-log.js）
+    if (req.query.debug === '1') {
+      const logs = await redis.get('bulk:log');
+      return res.json({
+        lastDate: meta?.lastDate ?? null,
+        lastTime: meta?.lastTime ?? null,
+        scanning,
+        progress: scanProgress,
+        backtest,
+        bulkProgress: bulkProgress || null,
+        logs: logs || [],
+      });
+    }
+
     return res.json({
       lastDate: meta?.lastDate ?? null,
       lastTime: meta?.lastTime ?? null,
