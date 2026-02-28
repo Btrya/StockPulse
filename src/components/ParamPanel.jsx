@@ -118,14 +118,31 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
           </div>
 
           <div className="flex flex-col gap-1">
-            <span className="text-xs text-slate-400">J 值阈值</span>
-            <InputNumber
-              value={params.j}
-              onChange={v => update('j', v ?? 0)}
-              style={{ width: 100 }}
-              step={5}
+            <span className="text-xs text-slate-400">J 值模式</span>
+            <Radio.Group
+              value={params.jMode || 'fixed'}
+              onChange={e => update('jMode', e.target.value)}
+              optionType="button"
+              buttonStyle="solid"
+              size="middle"
+              options={[
+                { label: '固定', value: 'fixed' },
+                { label: '动态', value: 'dynamic' },
+              ]}
             />
           </div>
+
+          {(params.jMode || 'fixed') === 'fixed' && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">J 值阈值</span>
+              <InputNumber
+                value={params.j}
+                onChange={v => update('j', v ?? 0)}
+                style={{ width: 100 }}
+                step={5}
+              />
+            </div>
+          )}
 
           <div className="flex flex-col gap-1">
             <span className="text-xs text-slate-400">容差 %</span>
@@ -212,7 +229,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </Button>
             <Button
               icon={<ReloadOutlined />}
-              onClick={() => { setParams({ klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, closeAboveShort: false, hasVolumeDouble: false, hasShrinkingPullback: false, hasConsecutiveShrink: false }); setDate(getLastTradingDate()); }}
+              onClick={() => { setParams({ klt: 'daily', j: 0, tolerance: 2, jMode: 'fixed', industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, closeAboveShort: false, hasVolumeDouble: false, hasShrinkingPullback: false, hasConsecutiveShrink: false }); setDate(getLastTradingDate()); }}
             >
               重置
             </Button>

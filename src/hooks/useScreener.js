@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { fetchResults } from '../lib/api';
 import { getLastTradingDate } from '../lib/date';
 
-const DEFAULTS = { klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, closeAboveShort: false, hasVolumeDouble: false, hasShrinkingPullback: false, hasConsecutiveShrink: false };
+const DEFAULTS = { klt: 'daily', j: 0, tolerance: 2, jMode: 'fixed', industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, closeAboveShort: false, hasVolumeDouble: false, hasShrinkingPullback: false, hasConsecutiveShrink: false };
 
 function readURL() {
   const sp = new URLSearchParams(window.location.search);
@@ -20,6 +20,7 @@ function readURL() {
     hasVolumeDouble: sp.get('hasVolumeDouble') === '1',
     hasShrinkingPullback: sp.get('hasShrinkingPullback') === '1',
     hasConsecutiveShrink: sp.get('hasConsecutiveShrink') === '1',
+    jMode: sp.get('jMode') || DEFAULTS.jMode,
   };
 }
 
@@ -38,6 +39,7 @@ function writeURL(params) {
   if (params.hasVolumeDouble) sp.set('hasVolumeDouble', '1');
   if (params.hasShrinkingPullback) sp.set('hasShrinkingPullback', '1');
   if (params.hasConsecutiveShrink) sp.set('hasConsecutiveShrink', '1');
+  if (params.jMode && params.jMode !== DEFAULTS.jMode) sp.set('jMode', params.jMode);
   const qs = sp.toString();
   const url = qs ? `?${qs}` : window.location.pathname;
   window.history.replaceState(null, '', url);
@@ -54,7 +56,11 @@ export default function useScreener() {
   const query = useCallback(async (p, d) => {
     setLoading(true);
     try {
-      const res = await fetchResults({ ...p, date: d });
+      const extra = {};
+      if (p.jMode === 'dynamic') {
+        extra.strategies = ['dynamicJ', 'nearLine', 'shortAboveBull'];
+      }
+      const res = await fetchResults({ ...p, ...extra, date: d });
       setResults(res.data || []);
       setMeta(res.meta || null);
     } catch (err) {

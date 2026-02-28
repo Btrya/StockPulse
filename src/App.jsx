@@ -48,7 +48,7 @@ export default function App() {
             loading={screener.loading}
             hotData={hotData}
           />
-          <ResultList results={screener.results} meta={screener.meta} loading={screener.loading} hotData={hotData} />
+          <ResultList results={screener.results} meta={screener.meta} loading={screener.loading} hotData={hotData} jMode={screener.params.jMode} />
         </>
       ),
     },

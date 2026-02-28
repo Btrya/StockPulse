@@ -3,7 +3,7 @@ import ResultTable from './ResultTable';
 import ResultCard from './ResultCard';
 import ExportBar from './ExportBar';
 
-export default function ResultList({ results, meta, loading, hotData }) {
+export default function ResultList({ results, meta, loading, hotData, jMode }) {
 
   if (loading) {
     return (
@@ -49,7 +49,7 @@ export default function ResultList({ results, meta, loading, hotData }) {
       )}
 
       <div className="hidden md:block">
-        <ResultTable data={results} hotData={hotData} />
+        <ResultTable data={results} hotData={hotData} jMode={jMode} />
       </div>
 
       <div className="md:hidden flex flex-col gap-3">

@@ -206,11 +206,11 @@ const consecutiveCol = {
   render: v => v ? <Tag color={v >= 5 ? 'red' : v >= 3 ? 'orange' : 'blue'}>{v} 板</Tag> : '-',
 };
 
-export default function ResultTable({ data, hotData, subTab }) {
+export default function ResultTable({ data, hotData, subTab, jMode }) {
   const hotSets = useMemo(() => buildHotSets(hotData), [hotData]);
   const isLimitUp = subTab === 'consecutiveLimitUp';
   const isBrick = subTab === 'brickReversal';
-  const isDynamicJ = subTab === 'dynamicJ';
+  const isDynamicJ = subTab === 'dynamicJ' || jMode === 'dynamic';
 
   // 动态生成行业 & 概念 filter
   const industries = [...new Set(data.map(r => r.industry).filter(Boolean))];
