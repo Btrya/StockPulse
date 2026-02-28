@@ -84,19 +84,21 @@ export default function SwingTradeView({
             <span className="text-slate-400">%</span>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-400">J &lt;</span>
-            <InputNumber
-              value={maxJ}
-              onChange={setMaxJ}
-              placeholder="不限"
-              min={-50}
-              max={100}
-              step={1}
-              size="small"
-              style={{ width: 70 }}
-            />
-          </div>
+          {!dynamicJ && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-400">J &lt;</span>
+              <InputNumber
+                value={maxJ}
+                onChange={setMaxJ}
+                placeholder="不限"
+                min={-50}
+                max={100}
+                step={1}
+                size="small"
+                style={{ width: 70 }}
+              />
+            </div>
+          )}
 
           <div className="flex items-center gap-1.5">
             <span className="text-slate-400">排列</span>

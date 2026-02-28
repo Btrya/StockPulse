@@ -108,15 +108,17 @@ export default function TrackingPanel({ params, setParams, date, setDate, indust
             />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-slate-400">J 值阈值</span>
-            <InputNumber
-              value={params.j}
-              onChange={v => update('j', v ?? 0)}
-              style={{ width: 100 }}
-              step={5}
-            />
-          </div>
+          {!params.dynamicJ && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">J 值阈值</span>
+              <InputNumber
+                value={params.j}
+                onChange={v => update('j', v ?? 0)}
+                style={{ width: 100 }}
+                step={5}
+              />
+            </div>
+          )}
 
           <div className="flex flex-col gap-1">
             <span className="text-xs text-slate-400">容差 %</span>

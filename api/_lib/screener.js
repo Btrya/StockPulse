@@ -267,7 +267,10 @@ export function filterResults(results, {
   strategies, combinator, line, weeklyBull, weeklyLowJ, dailyLowJ, dynamicJ,
   closeAboveShort, hasVolumeDouble, hasShrinkingPullback, hasConsecutiveShrink,
 } = {}) {
-  const sIds = strategies || DEFAULT_STRATEGIES;
+  // 动态J值开启时，用 dynamicJ 替代固定 lowJ 策略（互斥）
+  const sIds = dynamicJ
+    ? (strategies || DEFAULT_STRATEGIES).filter(id => id !== 'lowJ')
+    : (strategies || DEFAULT_STRATEGIES);
   const comb = combinator || 'AND';
   const params = { jThreshold: jThreshold ?? 0, tolerance: tolerance ?? 2, line: line ?? 'short' };
 

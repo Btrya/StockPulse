@@ -85,8 +85,8 @@ export default function useSwingTrade() {
     return rawResults.filter(r => {
       // K线涨幅上限
       if (maxGain != null && Math.abs(r.change) > maxGain) return false;
-      // J值上限
-      if (maxJ != null && r.j >= maxJ) return false;
+      // J值上限（与动态J值互斥）
+      if (!dynamicJ && maxJ != null && r.j >= maxJ) return false;
       // 多头/空头排列
       if (arrangement === 'bull' && r.shortTrend <= r.bullBear) return false;
       if (arrangement === 'bear' && r.shortTrend > r.bullBear) return false;
