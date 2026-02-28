@@ -1,4 +1,4 @@
-import { DatePicker, Select, InputNumber, Input, Radio, Button, Space, Card, Checkbox, Progress } from 'antd';
+import { DatePicker, Select, InputNumber, Input, Radio, Button, Space, Card, Checkbox, Progress, Switch } from 'antd';
 import { ExperimentOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { buildHotOptions } from '../hooks/useHotData';
@@ -131,13 +131,22 @@ export default function BacktestPanel({
                 onChange={v => update('excludeBoards', v)}
               />
             </div>
+            {!params.dynamicJ && (
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-slate-400">J 值阈值</span>
+                <InputNumber
+                  value={params.j}
+                  onChange={v => update('j', v ?? 0)}
+                  style={{ width: 100 }}
+                  step={5}
+                />
+              </div>
+            )}
             <div className="flex flex-col gap-1">
-              <span className="text-xs text-slate-400">J 值阈值</span>
-              <InputNumber
-                value={params.j}
-                onChange={v => update('j', v ?? 0)}
-                style={{ width: 100 }}
-                step={5}
+              <span className="text-xs text-slate-400">动态J值</span>
+              <Switch
+                checked={params.dynamicJ}
+                onChange={v => update('dynamicJ', v)}
               />
             </div>
             <div className="flex flex-col gap-1">
@@ -153,7 +162,7 @@ export default function BacktestPanel({
             </div>
             <Space>
               <Button icon={<SearchOutlined />} onClick={onSearch} loading={loading}>筛选</Button>
-              <Button icon={<ReloadOutlined />} onClick={() => setParams({ klt: params.klt, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [] })}>重置</Button>
+              <Button icon={<ReloadOutlined />} onClick={() => setParams({ klt: params.klt, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], dynamicJ: false })}>重置</Button>
             </Space>
           </div>
         )}

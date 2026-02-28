@@ -18,6 +18,7 @@ export default async function handler(req, res) {
     const industries = req.query.industries ? req.query.industries.split(',').filter(Boolean) : [];
     const excludeBoards = req.query.excludeBoards ? req.query.excludeBoards.split(',').filter(Boolean) : [];
     const concepts = req.query.concepts ? req.query.concepts.split(',').filter(Boolean) : [];
+    const dynamicJ = req.query.dynamicJ === '1';
 
     if (!redis.isConfigured()) {
       return res.json({ data: [], meta: { error: 'Redis 未配置' } });
@@ -44,6 +45,16 @@ export default async function handler(req, res) {
       }
     } catch {}
 
+    // 注入 sensitiveJ（动态 J 值）
+    try {
+      const jProfileMap = await redis.get(KEY.JPROFILE_MAP);
+      if (jProfileMap) {
+        for (const r of data) {
+          r.sensitiveJ = jProfileMap[r.ts_code] ?? null;
+        }
+      }
+    } catch {}
+
     const allIndustries = [...new Set(data.map(r => r.industry).filter(Boolean))].sort(
       (a, b) => a.localeCompare(b, 'zh-CN')
     );
@@ -51,7 +62,7 @@ export default async function handler(req, res) {
       (a, b) => a.localeCompare(b, 'zh-CN')
     );
 
-    const filtered = filterResults(data, { jThreshold: j, tolerance, industries, excludeBoards, concepts });
+    const filtered = filterResults(data, { jThreshold: j, tolerance, industries, excludeBoards, concepts, dynamicJ });
 
     filtered.sort((a, b) => {
       const va = a[sort] ?? 0;

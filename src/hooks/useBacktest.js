@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { triggerBacktest, fetchBacktestResults } from '../lib/api';
 
-const DEFAULTS = { klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [] };
+const DEFAULTS = { klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], dynamicJ: false };
 
 export default function useBacktest() {
   const [params, setParams] = useState(DEFAULTS);
@@ -68,7 +68,7 @@ export default function useBacktest() {
 
         // 每轮 poll 后静默获取中间结果，实时渲染已筛出数据
         try {
-          const mid = await fetchBacktestResults({ date: effectiveDate, klt, j: params.j, tolerance: params.tolerance, industries: params.industries, excludeBoards: params.excludeBoards, concepts: params.concepts });
+          const mid = await fetchBacktestResults({ date: effectiveDate, klt, j: params.j, tolerance: params.tolerance, industries: params.industries, excludeBoards: params.excludeBoards, concepts: params.concepts, dynamicJ: params.dynamicJ });
           if (mid.data?.length) {
             setResults(mid.data);
             setMeta(mid.meta || null);

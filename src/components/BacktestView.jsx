@@ -102,7 +102,7 @@ export default function BacktestView({
           )}
 
           <div className="hidden md:block">
-            <ResultTable data={displayResults} hotData={hotData} />
+            <ResultTable data={displayResults} hotData={hotData} jMode={params.dynamicJ ? 'dynamic' : undefined} />
           </div>
 
           <div className="md:hidden flex flex-col gap-3">
