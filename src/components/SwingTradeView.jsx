@@ -23,6 +23,7 @@ export default function SwingTradeView({
   upperLeBody, setUpperLeBody,
   weeklyBull, setWeeklyBull,
   weeklyLowJ, setWeeklyLowJ,
+  dynamicJ, setDynamicJ,
   closeAboveShort, setCloseAboveShort,
   hasVolumeDouble, setHasVolumeDouble,
   hasShrinkingPullback, setHasShrinkingPullback,
@@ -33,7 +34,6 @@ export default function SwingTradeView({
   const subItems = [
     { key: 'brickReversal', label: '砖型反转' },
     { key: 'consecutiveLimitUp', label: '连板' },
-    { key: 'dynamicJ', label: '动态J值' },
   ];
 
   const isBrick = subTab === 'brickReversal';
@@ -157,6 +157,15 @@ export default function SwingTradeView({
               size="small"
             />
             <span className="text-slate-400">周线低位</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Switch
+              checked={dynamicJ}
+              onChange={setDynamicJ}
+              size="small"
+            />
+            <span className="text-slate-400">动态J值</span>
           </div>
 
           <div className="flex items-center gap-1.5">

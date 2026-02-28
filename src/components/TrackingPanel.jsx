@@ -150,6 +150,14 @@ export default function TrackingPanel({ params, setParams, date, setDate, indust
             </div>
           )}
 
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-slate-400">动态J值</span>
+            <Switch
+              checked={params.dynamicJ}
+              onChange={v => update('dynamicJ', v)}
+            />
+          </div>
+
           {params.klt === 'weekly' && (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-slate-400">日线低位</span>
@@ -171,7 +179,7 @@ export default function TrackingPanel({ params, setParams, date, setDate, indust
             </Button>
             <Button
               icon={<ReloadOutlined />}
-              onClick={() => { setParams({ klt: 'daily', minDays: 2, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false }); setDate(getLastTradingDate()); }}
+              onClick={() => { setParams({ klt: 'daily', minDays: 2, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, dynamicJ: false }); setDate(getLastTradingDate()); }}
             >
               重置
             </Button>

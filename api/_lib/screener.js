@@ -63,13 +63,6 @@ export const STRATEGIES = {
     paramKeys: [],
     test: (r) => r.consecutiveCount >= 2,
   },
-  dynamicJ: {
-    id: 'dynamicJ',
-    name: 'KDJ 动态J值低位',
-    desc: 'J值低于该股票历史超卖周期底部中位数（sensitiveJ）',
-    paramKeys: [],
-    test: (r) => r.sensitiveJ != null && r.j < r.sensitiveJ,
-  },
 };
 
 // 默认启用的策略（保持现有行为：J值低位 AND 触碰趋势线）
@@ -271,7 +264,7 @@ export function applyStrategies(r, params, strategyIds = DEFAULT_STRATEGIES, com
 // strategies/combinator 可选，不传时使用默认策略（lowJ AND nearLine），行为与改动前完全一致
 export function filterResults(results, {
   jThreshold, tolerance, industries, excludeBoards, concepts,
-  strategies, combinator, line, weeklyBull, weeklyLowJ, dailyLowJ,
+  strategies, combinator, line, weeklyBull, weeklyLowJ, dailyLowJ, dynamicJ,
   closeAboveShort, hasVolumeDouble, hasShrinkingPullback, hasConsecutiveShrink,
 } = {}) {
   const sIds = strategies || DEFAULT_STRATEGIES;
@@ -291,6 +284,8 @@ export function filterResults(results, {
     if (weeklyBull && r.weeklyBull !== true) return false;
     if (weeklyLowJ && !(r.weeklyJ != null && r.weeklyJ < 13)) return false;
     if (dailyLowJ && !(r.dailyJ != null && r.dailyJ < 13)) return false;
+    // 动态J值
+    if (dynamicJ && !(r.sensitiveJ != null && r.j < r.sensitiveJ)) return false;
     // 入场条件过滤
     if (closeAboveShort && r.closeAboveShort !== true) return false;
     if (hasVolumeDouble && r.hasVolumeDouble !== true) return false;

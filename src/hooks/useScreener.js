@@ -58,7 +58,7 @@ export default function useScreener() {
     try {
       const extra = {};
       if (p.jMode === 'dynamic') {
-        extra.strategies = ['dynamicJ', 'nearLine', 'shortAboveBull'];
+        extra.dynamicJ = true;
       }
       const res = await fetchResults({ ...p, ...extra, date: d });
       setResults(res.data || []);

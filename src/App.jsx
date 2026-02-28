@@ -122,6 +122,8 @@ export default function App() {
           setWeeklyBull={swingTrade.setWeeklyBull}
           weeklyLowJ={swingTrade.weeklyLowJ}
           setWeeklyLowJ={swingTrade.setWeeklyLowJ}
+          dynamicJ={swingTrade.dynamicJ}
+          setDynamicJ={swingTrade.setDynamicJ}
           closeAboveShort={swingTrade.closeAboveShort}
           setCloseAboveShort={swingTrade.setCloseAboveShort}
           hasVolumeDouble={swingTrade.hasVolumeDouble}

@@ -50,6 +50,7 @@ export default async function handler(req, res) {
     const hasVolumeDouble = req.query.hasVolumeDouble === '1';
     const hasShrinkingPullback = req.query.hasShrinkingPullback === '1';
     const hasConsecutiveShrink = req.query.hasConsecutiveShrink === '1';
+    const dynamicJ = req.query.dynamicJ === '1';
 
     // 尝试从 Redis 读取扫描结果
     let data = null;
@@ -182,7 +183,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const filtered = filterResults(data, { jThreshold: j, tolerance, industries, excludeBoards, concepts, strategies, combinator, line, weeklyBull, weeklyLowJ, dailyLowJ, closeAboveShort, hasVolumeDouble, hasShrinkingPullback, hasConsecutiveShrink });
+    const filtered = filterResults(data, { jThreshold: j, tolerance, industries, excludeBoards, concepts, strategies, combinator, line, weeklyBull, weeklyLowJ, dailyLowJ, dynamicJ, closeAboveShort, hasVolumeDouble, hasShrinkingPullback, hasConsecutiveShrink });
 
     filtered.sort((a, b) => {
       const va = a[sort] ?? 0;
