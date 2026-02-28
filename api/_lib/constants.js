@@ -30,6 +30,8 @@ export const KEY = {
   postAnalysis: (date, klt, window) => `pa:${date}:${klt}:${window}`,
   PA_PROGRESS: 'pa:progress',
   kline: (tsCode, klt) => `kl:${tsCode}:${klt}`,
+  JPROFILE_MAP: 'jprofile:map',
+  JPROFILE_PROGRESS: 'jprofile:progress',
 };
 
 // TTL (seconds)
@@ -43,6 +45,7 @@ export const TTL = {
   HOT_DATA: 3600,               // 1h
   POST_ANALYSIS: 604800,         // 7d
   KLINE: 15552000,               // 180d
+  JPROFILE: 3888000,              // 45d
 };
 
 // 追踪窗口

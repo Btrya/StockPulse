@@ -3,6 +3,7 @@ import { screenStock } from './_lib/screener.js';
 import * as redis from './_lib/redis.js';
 import { KEY, TTL, TUSHARE_BULK, getCNDate, isWeekend, getLastTradingDate, snapToFriday } from './_lib/constants.js';
 import { bulkScan } from './_lib/bulk-scan.js';
+import { runJProfileScan } from './_lib/jprofile.js';
 
 const TIMEOUT_MS = 50000;
 
@@ -21,6 +22,20 @@ export default async function handler(req, res) {
   try {
     if (!redis.isConfigured()) {
       return res.json({ message: 'Redis not configured, skipping' });
+    }
+
+    // ── jprofile 模式：计算每只股票的动态 J 值 ──
+    if (req.query.mode === 'jprofile') {
+      const result = await runJProfileScan({ startTime, today });
+      console.log(`[cron] jprofile result | done=${result.done} processed=${result.processed} idx=${result.idx}/${result.total} profiles=${result.profileCount}`);
+      if (!result.done) {
+        const proto = req.headers['x-forwarded-proto'] || 'https';
+        const selfUrl = `${proto}://${req.headers.host}/api/cron?mode=jprofile`;
+        const headers = { 'Content-Type': 'application/json' };
+        if (process.env.CRON_SECRET) headers['Authorization'] = `Bearer ${process.env.CRON_SECRET}`;
+        fetch(selfUrl, { method: 'GET', headers }).catch(() => {});
+      }
+      return res.json(result);
     }
 
     // ── 批量模式：按日期拉全市场 ──

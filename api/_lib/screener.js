@@ -63,6 +63,13 @@ export const STRATEGIES = {
     paramKeys: [],
     test: (r) => r.consecutiveCount >= 2,
   },
+  dynamicJ: {
+    id: 'dynamicJ',
+    name: 'KDJ 动态J值低位',
+    desc: 'J值低于该股票历史超卖周期底部中位数（sensitiveJ）',
+    paramKeys: [],
+    test: (r) => r.sensitiveJ != null && r.j < r.sensitiveJ,
+  },
 };
 
 // 默认启用的策略（保持现有行为：J值低位 AND 触碰趋势线）

@@ -12,6 +12,10 @@ const PRESETS = {
     strategies: ['consecutiveLimitUp'],
     combinator: 'AND',
   },
+  dynamicJ: {
+    strategies: ['dynamicJ'],
+    combinator: 'AND',
+  },
 };
 
 export default function useSwingTrade() {

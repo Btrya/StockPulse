@@ -33,6 +33,7 @@ export default function SwingTradeView({
   const subItems = [
     { key: 'brickReversal', label: '砖型反转' },
     { key: 'consecutiveLimitUp', label: '连板' },
+    { key: 'dynamicJ', label: '动态J值' },
   ];
 
   const isBrick = subTab === 'brickReversal';

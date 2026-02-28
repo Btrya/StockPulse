@@ -7,7 +7,8 @@
     { "path": "/api/cron", "schedule": "30 8 * * 1-5" },
     { "path": "/api/cron", "schedule": "40 8 * * 1-5" },
     { "path": "/api/cron", "schedule": "50 8 * * 1-5" },
-    { "path": "/api/concepts", "schedule": "0 6 * * 1" }
+    { "path": "/api/concepts", "schedule": "0 6 * * 1" },
+    { "path": "/api/cron?mode=jprofile", "schedule": "0 9 1 * *" }
   ],
   "functions": {
     "api/**/*.js": { "maxDuration": 60 }

@@ -129,6 +129,24 @@ const columns = [
   },
 ];
 
+// sensitiveJ 列（动态J值模式使用）
+const sensitiveJCol = {
+  title: '敏感J',
+  dataIndex: 'sensitiveJ',
+  width: 80,
+  align: 'right',
+  sorter: (a, b) => (a.sensitiveJ ?? 0) - (b.sensitiveJ ?? 0),
+  render: (v, r) => {
+    if (v == null) return <span className="text-slate-500">-</span>;
+    const hit = r.j < v;
+    return (
+      <Tag color={hit ? 'green' : 'default'} className="num">
+        {v}
+      </Tag>
+    );
+  },
+};
+
 // 连板模式隐藏的列
 const LIMIT_UP_HIDE = ['deviationShort', 'shortTrend', 'deviationBull', 'bullBear', 'j'];
 
@@ -192,6 +210,7 @@ export default function ResultTable({ data, hotData, subTab }) {
   const hotSets = useMemo(() => buildHotSets(hotData), [hotData]);
   const isLimitUp = subTab === 'consecutiveLimitUp';
   const isBrick = subTab === 'brickReversal';
+  const isDynamicJ = subTab === 'dynamicJ';
 
   // 动态生成行业 & 概念 filter
   const industries = [...new Set(data.map(r => r.industry).filter(Boolean))];
@@ -211,6 +230,14 @@ export default function ResultTable({ data, hotData, subTab }) {
       brickCol,
       arrangementCol,
       ...columns.slice(idx + 1),
+    ];
+  } else if (isDynamicJ) {
+    // 动态J值：在 J 值列后插入 sensitiveJ 列
+    const jIdx = columns.findIndex(c => c.dataIndex === 'j');
+    baseCols = [
+      ...columns.slice(0, jIdx + 1),
+      sensitiveJCol,
+      ...columns.slice(jIdx + 1),
     ];
   } else {
     baseCols = columns;

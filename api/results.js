@@ -99,6 +99,18 @@ export default async function handler(req, res) {
       } catch {}
     }
 
+    // 注入 sensitiveJ（动态 J 值）
+    if (redis.isConfigured() && data && data.length) {
+      try {
+        const jProfileMap = await redis.get(KEY.JPROFILE_MAP);
+        if (jProfileMap) {
+          for (const r of data) {
+            r.sensitiveJ = jProfileMap[r.ts_code] ?? null;
+          }
+        }
+      } catch {}
+    }
+
     // 跨周期附加：日线 ↔ 周线互查
     if (data && data.length && redis.isConfigured()) {
       try {

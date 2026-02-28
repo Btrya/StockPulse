@@ -60,6 +60,34 @@ export function kdj(highs, lows, closes) {
   return { k: kVal, d: dVal, j: jVal };
 }
 
+// KDJ(9,3,3) - 返回完整 J 值数组（用于 jprofile 历史分析）
+export function kdjSeries(highs, lows, closes) {
+  const period = 9;
+  if (highs.length < period) return [];
+
+  const rsvArr = [];
+  for (let i = period - 1; i < highs.length; i++) {
+    let hh = -Infinity;
+    let ll = Infinity;
+    for (let j = i - period + 1; j <= i; j++) {
+      if (highs[j] > hh) hh = highs[j];
+      if (lows[j] < ll) ll = lows[j];
+    }
+    rsvArr.push(hh === ll ? 50 : ((closes[i] - ll) / (hh - ll)) * 100);
+  }
+
+  let kVal = rsvArr[0];
+  let dVal = rsvArr[0];
+  const jArr = [3 * kVal - 2 * dVal];
+  for (let i = 1; i < rsvArr.length; i++) {
+    kVal = (kVal * 2) / 3 + (rsvArr[i] * 1) / 3;
+    dVal = (dVal * 2) / 3 + (kVal * 1) / 3;
+    jArr.push(3 * kVal - 2 * dVal);
+  }
+
+  return jArr;
+}
+
 // 短期趋势线: EMA(EMA(Close, 10), 10) 最新值
 export function shortTrendLine(closes) {
   const e1 = ema(closes, 10);
