@@ -156,6 +156,9 @@ export async function bulkScan({
   const probeExists = await redis.get(probeKey);
   if (!probeExists) {
     await log(`[bulk] SKIP compute — temp key ${probeKey} already cleaned by another instance`);
+    if (progressKey === KEY.BULK_PROGRESS) {
+      await redis.del(progressKey);
+    }
     return { done: true, klt, phase: 'skip', reason: 'temp_keys_cleaned', elapsed: Date.now() - startTime };
   }
 
