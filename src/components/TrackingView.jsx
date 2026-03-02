@@ -1,13 +1,25 @@
+import { useMemo } from 'react';
 import { Spin, Empty, Alert } from 'antd';
 import TrackingPanel from './TrackingPanel';
 import TrackingTable from './TrackingTable';
 import TrackingCard from './TrackingCard';
 import ExportBar from './ExportBar';
+import { buildHotSets, getHotReasons } from '../hooks/useHotData';
 
 export default function TrackingView({ params, setParams, date, setDate, results, meta, loading, refresh, sharedIndustries, sharedConcepts, hotData }) {
   // 追踪结果有行业/概念就用，否则 fallback 到 screener 共享的列表
   const panelIndustries = meta?.industries?.length ? meta.industries : (sharedIndustries || []);
   const panelConcepts = meta?.concepts?.length ? meta.concepts : (sharedConcepts || []);
+
+  const displayResults = useMemo(() => {
+    if (!params.onlyHot) return results;
+    const hotSets = buildHotSets(hotData);
+    if (!hotSets) return results;
+    return results.filter(r => {
+      const target = { ts_code: r.ts_code, industry: r.industry, concepts: r.latest?.concepts || [] };
+      return getHotReasons(target, hotSets).length > 0;
+    });
+  }, [results, params.onlyHot, hotData]);
 
   const filename = `追踪-${meta?.scanDates?.[0] || new Date().toISOString().slice(0, 10)}`;
 
@@ -46,8 +58,9 @@ export default function TrackingView({ params, setParams, date, setDate, results
           {meta && (
             <div className="flex items-center justify-between mb-3 text-xs text-slate-400">
               <span>
-                共 {results.length} 只连续入选
-                <ExportBar data={results} filename={filename} />
+                共 {displayResults.length} 只连续入选
+                {params.onlyHot && displayResults.length !== results.length ? ` (全量 ${results.length} 只)` : ''}
+                <ExportBar data={displayResults} filename={filename} />
               </span>
               {meta.scanDates && (
                 <span>覆盖日期: {meta.scanDates.join(', ')}</span>
@@ -56,11 +69,11 @@ export default function TrackingView({ params, setParams, date, setDate, results
           )}
 
           <div className="hidden md:block">
-            <TrackingTable data={results} hotData={hotData} />
+            <TrackingTable data={displayResults} hotData={hotData} />
           </div>
 
           <div className="md:hidden flex flex-col gap-3">
-            {results.map(item => (
+            {displayResults.map(item => (
               <TrackingCard key={item.ts_code} item={item} hotData={hotData} />
             ))}
           </div>

@@ -48,7 +48,7 @@ export default function App() {
             loading={screener.loading}
             hotData={hotData}
           />
-          <ResultList results={screener.results} meta={screener.meta} loading={screener.loading} hotData={hotData} jMode={screener.params.jMode} />
+          <ResultList results={screener.results} meta={screener.meta} loading={screener.loading} hotData={hotData} jMode={screener.params.jMode} onlyHot={screener.params.onlyHot} />
         </>
       ),
     },
@@ -134,6 +134,8 @@ export default function App() {
           setHasConsecutiveShrink={swingTrade.setHasConsecutiveShrink}
           whiteBelowTwenty={swingTrade.whiteBelowTwenty}
           setWhiteBelowTwenty={swingTrade.setWhiteBelowTwenty}
+          onlyHot={swingTrade.onlyHot}
+          setOnlyHot={swingTrade.setOnlyHot}
           results={swingTrade.results}
           rawTotal={swingTrade.rawResults.length}
           meta={swingTrade.meta}

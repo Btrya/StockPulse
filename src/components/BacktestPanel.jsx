@@ -101,9 +101,9 @@ export default function BacktestPanel({
             {scanning ? '加入队列' : '开始回测'}
           </Button>
 
-          <div className="flex items-center gap-1.5">
-            <Switch checked={params.onlyHot} onChange={v => update('onlyHot', v)} size="small" />
+          <div className="flex flex-col gap-1">
             <span className="text-xs text-slate-400">只看热门</span>
+            <Switch checked={params.onlyHot} onChange={v => update('onlyHot', v)} />
           </div>
 
           {scanning && scanInfo && (

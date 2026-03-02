@@ -178,6 +178,14 @@ export default function TrackingPanel({ params, setParams, date, setDate, indust
             />
           </div>
 
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-slate-400">只看热门</span>
+            <Switch
+              checked={params.onlyHot}
+              onChange={v => update('onlyHot', v)}
+            />
+          </div>
+
           <Space>
             <Button
               type="primary"
@@ -189,7 +197,7 @@ export default function TrackingPanel({ params, setParams, date, setDate, indust
             </Button>
             <Button
               icon={<ReloadOutlined />}
-              onClick={() => { setParams({ klt: 'daily', minDays: 2, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, dynamicJ: false, whiteBelowTwenty: false }); setDate(getLastTradingDate()); }}
+              onClick={() => { setParams({ klt: 'daily', minDays: 2, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, dynamicJ: false, whiteBelowTwenty: false, onlyHot: false }); setDate(getLastTradingDate()); }}
             >
               重置
             </Button>

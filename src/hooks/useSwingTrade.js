@@ -35,6 +35,7 @@ export default function useSwingTrade() {
   const [hasShrinkingPullback, setHasShrinkingPullback] = useState(false);
   const [hasConsecutiveShrink, setHasConsecutiveShrink] = useState(false);
   const [whiteBelowTwenty, setWhiteBelowTwenty] = useState(false);
+  const [onlyHot, setOnlyHot] = useState(false);
 
   const [rawResults, setRawResults] = useState([]);   // 后端原始结果
   const [meta, setMeta] = useState(null);
@@ -138,6 +139,7 @@ export default function useSwingTrade() {
     hasShrinkingPullback, setHasShrinkingPullback,
     hasConsecutiveShrink, setHasConsecutiveShrink,
     whiteBelowTwenty, setWhiteBelowTwenty,
+    onlyHot, setOnlyHot,
     results, rawResults, meta, loading,
     refresh,
   };

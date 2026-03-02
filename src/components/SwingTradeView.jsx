@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { Tabs, Radio, Spin, Empty, Alert, DatePicker, Checkbox, InputNumber, Switch } from 'antd';
 import ResultTable from './ResultTable';
 import ResultCard from './ResultCard';
 import ExportBar from './ExportBar';
+import { buildHotSets, getHotReasons } from '../hooks/useHotData';
 import { getLastTradingDate } from '../lib/date';
 import dayjs from 'dayjs';
 
@@ -29,6 +31,7 @@ export default function SwingTradeView({
   hasShrinkingPullback, setHasShrinkingPullback,
   hasConsecutiveShrink, setHasConsecutiveShrink,
   whiteBelowTwenty, setWhiteBelowTwenty,
+  onlyHot, setOnlyHot,
   results, rawTotal, meta, loading,
   hotData,
 }) {
@@ -38,6 +41,13 @@ export default function SwingTradeView({
   ];
 
   const isBrick = subTab === 'brickReversal';
+
+  const displayResults = useMemo(() => {
+    if (!onlyHot) return results;
+    const hotSets = buildHotSets(hotData);
+    if (!hotSets) return results;
+    return results.filter(r => getHotReasons(r, hotSets).length > 0);
+  }, [results, onlyHot, hotData]);
 
   const filename = `超短线-${subTab}-${meta?.scanDate || date || new Date().toISOString().slice(0, 10)}`;
 
@@ -66,6 +76,10 @@ export default function SwingTradeView({
           onChange={setExcludeBoards}
           className="text-xs"
         />
+        <div className="flex items-center gap-1.5">
+          <Switch checked={onlyHot} onChange={setOnlyHot} size="small" />
+          <span className="text-xs text-slate-400">只看热门</span>
+        </div>
       </div>
 
       {isBrick && (
@@ -230,19 +244,20 @@ export default function SwingTradeView({
           {meta && (
             <div className="flex items-center justify-between mb-3 text-xs text-slate-400">
               <span>
-                共 {results.length} 只符合条件
+                共 {displayResults.length} 只符合条件
                 {isBrick && rawTotal != null ? ` (反转信号 ${rawTotal} 只)` : meta.wideTotal ? ` (全量 ${meta.wideTotal} 只)` : ''}
-                <ExportBar data={results} filename={filename} />
+                {onlyHot && displayResults.length !== results.length ? ` → 热门 ${displayResults.length} 只` : ''}
+                <ExportBar data={displayResults} filename={filename} />
               </span>
               {meta.scanDate && <span>数据日期: {meta.scanDate}</span>}
             </div>
           )}
 
           <div className="hidden md:block">
-            <ResultTable data={results} hotData={hotData} subTab={subTab} />
+            <ResultTable data={displayResults} hotData={hotData} subTab={subTab} />
           </div>
           <div className="md:hidden flex flex-col gap-3">
-            {results.map(item => (
+            {displayResults.map(item => (
               <ResultCard key={item.code} item={item} hotData={hotData} subTab={subTab} />
             ))}
           </div>

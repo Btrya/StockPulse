@@ -226,6 +226,14 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             />
           </div>
 
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-slate-400">只看热门</span>
+            <Switch
+              checked={params.onlyHot}
+              onChange={v => update('onlyHot', v)}
+            />
+          </div>
+
           <Space>
             <Button
               type="primary"
@@ -237,7 +245,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </Button>
             <Button
               icon={<ReloadOutlined />}
-              onClick={() => { setParams({ klt: 'daily', j: 0, tolerance: 2, jMode: 'fixed', industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, closeAboveShort: false, hasVolumeDouble: false, hasShrinkingPullback: false, hasConsecutiveShrink: false, whiteBelowTwenty: false }); setDate(getLastTradingDate()); }}
+              onClick={() => { setParams({ klt: 'daily', j: 0, tolerance: 2, jMode: 'fixed', industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, closeAboveShort: false, hasVolumeDouble: false, hasShrinkingPullback: false, hasConsecutiveShrink: false, whiteBelowTwenty: false, onlyHot: false }); setDate(getLastTradingDate()); }}
             >
               重置
             </Button>

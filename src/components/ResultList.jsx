@@ -1,9 +1,11 @@
+import { useMemo } from 'react';
 import { Spin, Empty, Alert } from 'antd';
 import ResultTable from './ResultTable';
 import ResultCard from './ResultCard';
 import ExportBar from './ExportBar';
+import { buildHotSets, getHotReasons } from '../hooks/useHotData';
 
-export default function ResultList({ results, meta, loading, hotData, jMode }) {
+export default function ResultList({ results, meta, loading, hotData, jMode, onlyHot }) {
 
   if (loading) {
     return (
@@ -33,6 +35,13 @@ export default function ResultList({ results, meta, loading, hotData, jMode }) {
     );
   }
 
+  const displayResults = useMemo(() => {
+    if (!onlyHot) return results;
+    const hotSets = buildHotSets(hotData);
+    if (!hotSets) return results;
+    return results.filter(r => getHotReasons(r, hotSets).length > 0);
+  }, [results, onlyHot, hotData]);
+
   const filename = `筛选-${meta?.scanDate || new Date().toISOString().slice(0, 10)}`;
 
   return (
@@ -40,20 +49,20 @@ export default function ResultList({ results, meta, loading, hotData, jMode }) {
       {meta && (
         <div className="flex items-center justify-between mb-3 text-xs text-slate-400">
           <span>
-            共 {meta.total} 只符合条件
-            {meta.wideTotal ? ` (宽阈值 ${meta.wideTotal} 只)` : ''}
-            <ExportBar data={results} filename={filename} />
+            共 {displayResults.length} 只符合条件
+            {onlyHot && displayResults.length !== results.length ? ` (全量 ${meta.total} 只)` : meta.wideTotal ? ` (宽阈值 ${meta.wideTotal} 只)` : ''}
+            <ExportBar data={displayResults} filename={filename} />
           </span>
           {meta.scanDate && <span>数据日期: {meta.scanDate}</span>}
         </div>
       )}
 
       <div className="hidden md:block">
-        <ResultTable data={results} hotData={hotData} jMode={jMode} />
+        <ResultTable data={displayResults} hotData={hotData} jMode={jMode} />
       </div>
 
       <div className="md:hidden flex flex-col gap-3">
-        {results.map(item => (
+        {displayResults.map(item => (
           <ResultCard key={item.code} item={item} hotData={hotData} />
         ))}
       </div>
