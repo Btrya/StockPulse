@@ -48,7 +48,7 @@ export default function App() {
             loading={screener.loading}
             hotData={hotData}
           />
-          <ResultList results={screener.results} meta={screener.meta} loading={screener.loading} hotData={hotData} jMode={screener.params.jMode} subTab={screener.params.screenMode !== 'band' ? screener.params.screenMode : undefined} />
+          <ResultList results={screener.results} meta={screener.meta} loading={screener.loading} hotData={hotData} jMode={screener.params.jMode} />
         </>
       ),
     },
@@ -132,6 +132,8 @@ export default function App() {
           setHasShrinkingPullback={swingTrade.setHasShrinkingPullback}
           hasConsecutiveShrink={swingTrade.hasConsecutiveShrink}
           setHasConsecutiveShrink={swingTrade.setHasConsecutiveShrink}
+          whiteBelowTwenty={swingTrade.whiteBelowTwenty}
+          setWhiteBelowTwenty={swingTrade.setWhiteBelowTwenty}
           results={swingTrade.results}
           rawTotal={swingTrade.rawResults.length}
           meta={swingTrade.meta}

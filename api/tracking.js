@@ -15,6 +15,7 @@ export default async function handler(req, res) {
     const weeklyLowJ = req.query.weeklyLowJ === '1';
     const dailyLowJ = req.query.dailyLowJ === '1';
     const dynamicJ = req.query.dynamicJ === '1';
+    const whiteBelowTwenty = req.query.whiteBelowTwenty === '1';
     const reqDate = req.query.date || null; // 用户指定日期（锚定追踪窗口）
 
     if (!redis.isConfigured()) {
@@ -183,7 +184,7 @@ export default async function handler(req, res) {
     // 复用 filterResults 的策略逻辑，通过包装 latest 字段过桥
     const latestArr = tracked.map(t => t.latest);
     const passSet = new Set(
-      filterResults(latestArr, { jThreshold: j, tolerance, industries, excludeBoards, concepts, weeklyBull, weeklyLowJ, dailyLowJ, dynamicJ })
+      filterResults(latestArr, { jThreshold: j, tolerance, industries, excludeBoards, concepts, weeklyBull, weeklyLowJ, dailyLowJ, dynamicJ, whiteBelowTwenty })
         .map(r => r.ts_code)
     );
     const userFiltered = tracked.filter(t => passSet.has(t.ts_code));

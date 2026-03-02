@@ -236,7 +236,6 @@ export default function ResultTable({ data, hotData, subTab, jMode }) {
   const hotSets = useMemo(() => buildHotSets(hotData), [hotData]);
   const isLimitUp = subTab === 'consecutiveLimitUp';
   const isBrick = subTab === 'brickReversal';
-  const isWhiteBelow = subTab === 'whiteBelowTwenty';
 
   // 动态生成行业 & 概念 filter
   const industries = [...new Set(data.map(r => r.industry).filter(Boolean))];
@@ -260,15 +259,6 @@ export default function ResultTable({ data, hotData, subTab, jMode }) {
     // 在 J 值列后插入 sensitiveJ 列
     const jPos = baseCols.findIndex(c => c.dataIndex === 'j');
     if (jPos >= 0) baseCols.splice(jPos + 1, 0, sensitiveJCol);
-  } else if (isWhiteBelow) {
-    const idx = columns.findIndex(c => c.dataIndex === 'close');
-    baseCols = [
-      ...columns.slice(0, idx + 1),
-      changeCol,
-      fl3Col,
-      fl31Col,
-      ...columns.slice(idx + 1),
-    ];
   } else {
     baseCols = [...columns];
     if (jMode === 'dynamic') {

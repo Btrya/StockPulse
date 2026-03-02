@@ -12,10 +12,6 @@ const PRESETS = {
     strategies: ['consecutiveLimitUp'],
     combinator: 'AND',
   },
-  whiteBelowTwenty: {
-    strategies: ['whiteBelowTwenty'],
-    combinator: 'AND',
-  },
 };
 
 export default function useSwingTrade() {
@@ -38,6 +34,7 @@ export default function useSwingTrade() {
   const [hasVolumeDouble, setHasVolumeDouble] = useState(false);
   const [hasShrinkingPullback, setHasShrinkingPullback] = useState(false);
   const [hasConsecutiveShrink, setHasConsecutiveShrink] = useState(false);
+  const [whiteBelowTwenty, setWhiteBelowTwenty] = useState(false);
 
   const [rawResults, setRawResults] = useState([]);   // 后端原始结果
   const [meta, setMeta] = useState(null);
@@ -115,9 +112,11 @@ export default function useSwingTrade() {
       if (hasConsecutiveShrink && r.hasConsecutiveShrink !== true) return false;
       // 动态J值
       if (dynamicJ && !(r.sensitiveJ != null && r.j < r.sensitiveJ)) return false;
+      // 白线下20
+      if (whiteBelowTwenty && !(r.fl3 != null && r.fl3 <= 20 && r.fl31 != null && r.fl31 >= 70)) return false;
       return true;
     });
-  }, [rawResults, subTab, maxGain, maxJ, arrangement, nearLine, redGtGreen, upperLeBody, weeklyBull, weeklyLowJ, dynamicJ, closeAboveShort, hasVolumeDouble, hasShrinkingPullback, hasConsecutiveShrink]);
+  }, [rawResults, subTab, maxGain, maxJ, arrangement, nearLine, redGtGreen, upperLeBody, weeklyBull, weeklyLowJ, dynamicJ, closeAboveShort, hasVolumeDouble, hasShrinkingPullback, hasConsecutiveShrink, whiteBelowTwenty]);
 
   return {
     subTab, setSubTab,
@@ -138,6 +137,7 @@ export default function useSwingTrade() {
     hasVolumeDouble, setHasVolumeDouble,
     hasShrinkingPullback, setHasShrinkingPullback,
     hasConsecutiveShrink, setHasConsecutiveShrink,
+    whiteBelowTwenty, setWhiteBelowTwenty,
     results, rawResults, meta, loading,
     refresh,
   };

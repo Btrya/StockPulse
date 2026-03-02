@@ -63,40 +63,6 @@ export const STRATEGIES = {
     paramKeys: [],
     test: (r) => r.consecutiveCount >= 2,
   },
-  whiteBelowTwenty: {
-    id: 'whiteBelowTwenty',
-    name: '白线下20',
-    desc: '四线归零短期线(3)≤20 且 长期线(31)≥70，短期回调买入',
-    paramKeys: [],
-    test: (r) => {
-      if (r.fl3 == null || r.fl31 == null) return false;
-      return r.fl3 <= 20 && r.fl31 >= 70;
-    },
-  },
-  // 四线归零买: 四线同时 ≤6（注释，暂不启用）
-  // fourLineZero: {
-  //   id: 'fourLineZero',
-  //   name: '四线归零',
-  //   desc: '短期/中期/中长期/长期四条线同时≤6',
-  //   paramKeys: [],
-  //   test: (r) => r.fl3 != null && r.fl3 <= 6 && r.fl10 <= 6 && r.fl21 <= 6 && r.fl31 <= 6,
-  // },
-  // 白穿红线买: 短期上穿长期且长期<20（注释，暂不启用）
-  // whiteCrossRed: {
-  //   id: 'whiteCrossRed',
-  //   name: '白穿红线',
-  //   desc: 'CROSS(短期,长期) AND 长期<20',
-  //   paramKeys: [],
-  //   test: (r) => { /* 需要前一日 fl3Prev 实现 CROSS */ },
-  // },
-  // 白穿黄线买: 短期上穿中期且中期<30（注释，暂不启用）
-  // whiteCrossYellow: {
-  //   id: 'whiteCrossYellow',
-  //   name: '白穿黄线',
-  //   desc: 'CROSS(短期,中期) AND 中期<30',
-  //   paramKeys: [],
-  //   test: (r) => { /* 需要前一日 fl3Prev 实现 CROSS */ },
-  // },
 };
 
 // 默认启用的策略（保持现有行为：J值低位 AND 触碰趋势线）
@@ -305,6 +271,7 @@ export function filterResults(results, {
   jThreshold, tolerance, industries, excludeBoards, concepts,
   strategies, combinator, line, weeklyBull, weeklyLowJ, dailyLowJ, dynamicJ,
   closeAboveShort, hasVolumeDouble, hasShrinkingPullback, hasConsecutiveShrink,
+  whiteBelowTwenty,
 } = {}) {
   // 动态J值开启时，用 dynamicJ 替代固定 lowJ 策略（互斥）
   const sIds = dynamicJ
@@ -333,6 +300,8 @@ export function filterResults(results, {
     if (hasVolumeDouble && r.hasVolumeDouble !== true) return false;
     if (hasShrinkingPullback && r.hasShrinkingPullback !== true) return false;
     if (hasConsecutiveShrink && r.hasConsecutiveShrink !== true) return false;
+    // 四线归零：白线单针下20（短期线≤20 且 长期线≥70）
+    if (whiteBelowTwenty && !(r.fl3 != null && r.fl3 <= 20 && r.fl31 != null && r.fl31 >= 70)) return false;
     return applyStrategies(r, params, sIds, comb);
   });
 }

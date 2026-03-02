@@ -28,13 +28,13 @@ export default function SwingTradeView({
   hasVolumeDouble, setHasVolumeDouble,
   hasShrinkingPullback, setHasShrinkingPullback,
   hasConsecutiveShrink, setHasConsecutiveShrink,
+  whiteBelowTwenty, setWhiteBelowTwenty,
   results, rawTotal, meta, loading,
   hotData,
 }) {
   const subItems = [
     { key: 'brickReversal', label: '砖型反转' },
     { key: 'consecutiveLimitUp', label: '连板' },
-    { key: 'whiteBelowTwenty', label: '白线下20' },
   ];
 
   const isBrick = subTab === 'brickReversal';
@@ -205,6 +205,15 @@ export default function SwingTradeView({
               size="small"
             />
             <span className="text-slate-400">连续缩量</span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <Switch
+              checked={whiteBelowTwenty}
+              onChange={setWhiteBelowTwenty}
+              size="small"
+            />
+            <span className="text-slate-400">白线下20</span>
           </div>
         </div>
       )}

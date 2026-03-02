@@ -24,6 +24,7 @@ export function fetchResults(params) {
   if (params.hasVolumeDouble) qs.set('hasVolumeDouble', '1');
   if (params.hasShrinkingPullback) qs.set('hasShrinkingPullback', '1');
   if (params.hasConsecutiveShrink) qs.set('hasConsecutiveShrink', '1');
+  if (params.whiteBelowTwenty) qs.set('whiteBelowTwenty', '1');
   if (params.dynamicJ) qs.set('dynamicJ', '1');
   if (params.combinator) qs.set('combinator', params.combinator);
   if (params.line) qs.set('line', params.line);
@@ -64,6 +65,7 @@ export function fetchTracking(params) {
   if (params.weeklyLowJ) qs.set('weeklyLowJ', '1');
   if (params.dailyLowJ) qs.set('dailyLowJ', '1');
   if (params.dynamicJ) qs.set('dynamicJ', '1');
+  if (params.whiteBelowTwenty) qs.set('whiteBelowTwenty', '1');
   return request(`/tracking?${qs}`);
 }
 
@@ -92,6 +94,7 @@ export function fetchBacktestResults(params) {
   if (params.hasVolumeDouble) qs.set('hasVolumeDouble', '1');
   if (params.hasShrinkingPullback) qs.set('hasShrinkingPullback', '1');
   if (params.hasConsecutiveShrink) qs.set('hasConsecutiveShrink', '1');
+  if (params.whiteBelowTwenty) qs.set('whiteBelowTwenty', '1');
   return request(`/backtest-results?${qs}`);
 }
 

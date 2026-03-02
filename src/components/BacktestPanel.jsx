@@ -12,7 +12,6 @@ const SCREEN_MODE_OPTIONS = [
   { label: '波段', value: 'band' },
   { label: '砖型反转', value: 'brickReversal' },
   { label: '连板', value: 'consecutiveLimitUp' },
-  { label: '白线下20', value: 'whiteBelowTwenty' },
 ];
 
 const BOARD_OPTIONS = [
@@ -51,6 +50,7 @@ export default function BacktestPanel({
       weeklyBull: false, weeklyLowJ: false,
       closeAboveShort: false, hasVolumeDouble: false,
       hasShrinkingPullback: false, hasConsecutiveShrink: false,
+      whiteBelowTwenty: false,
     }));
   };
 
@@ -207,6 +207,10 @@ export default function BacktestPanel({
             <div className="flex items-center gap-1.5">
               <Switch checked={params.hasConsecutiveShrink} onChange={v => update('hasConsecutiveShrink', v)} size="small" />
               <span className="text-slate-400">连续缩量</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Switch checked={params.whiteBelowTwenty} onChange={v => update('whiteBelowTwenty', v)} size="small" />
+              <span className="text-slate-400">白线下20</span>
             </div>
           </div>
         )}

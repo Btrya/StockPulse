@@ -26,6 +26,7 @@ export default async function handler(req, res) {
     const hasVolumeDouble = req.query.hasVolumeDouble === '1';
     const hasShrinkingPullback = req.query.hasShrinkingPullback === '1';
     const hasConsecutiveShrink = req.query.hasConsecutiveShrink === '1';
+    const whiteBelowTwenty = req.query.whiteBelowTwenty === '1';
 
     if (!redis.isConfigured()) {
       return res.json({ data: [], meta: { error: 'Redis 未配置' } });
@@ -73,7 +74,7 @@ export default async function handler(req, res) {
       jThreshold: j, tolerance, industries, excludeBoards, concepts, dynamicJ,
       strategies: strategies.length ? strategies : undefined,
       combinator, line,
-      closeAboveShort, hasVolumeDouble, hasShrinkingPullback, hasConsecutiveShrink,
+      closeAboveShort, hasVolumeDouble, hasShrinkingPullback, hasConsecutiveShrink, whiteBelowTwenty,
     });
 
     filtered.sort((a, b) => {

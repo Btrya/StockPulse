@@ -170,6 +170,14 @@ export default function TrackingPanel({ params, setParams, date, setDate, indust
             </div>
           )}
 
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-slate-400">白线下20</span>
+            <Switch
+              checked={params.whiteBelowTwenty}
+              onChange={v => update('whiteBelowTwenty', v)}
+            />
+          </div>
+
           <Space>
             <Button
               type="primary"
@@ -181,7 +189,7 @@ export default function TrackingPanel({ params, setParams, date, setDate, indust
             </Button>
             <Button
               icon={<ReloadOutlined />}
-              onClick={() => { setParams({ klt: 'daily', minDays: 2, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, dynamicJ: false }); setDate(getLastTradingDate()); }}
+              onClick={() => { setParams({ klt: 'daily', minDays: 2, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, dynamicJ: false, whiteBelowTwenty: false }); setDate(getLastTradingDate()); }}
             >
               重置
             </Button>

@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { fetchTracking } from '../lib/api';
 import { getLastTradingDate } from '../lib/date';
 
-const DEFAULTS = { klt: 'daily', minDays: 2, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, dynamicJ: false };
+const DEFAULTS = { klt: 'daily', minDays: 2, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, dynamicJ: false, whiteBelowTwenty: false };
 
 export default function useTracking() {
   const [params, setParams] = useState(DEFAULTS);

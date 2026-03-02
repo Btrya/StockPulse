@@ -13,6 +13,7 @@ const DEFAULTS = {
   // 入场条件（波段/砖型共用）
   closeAboveShort: false, hasVolumeDouble: false,
   hasShrinkingPullback: false, hasConsecutiveShrink: false,
+  whiteBelowTwenty: false,
 };
 
 // 每种 screenMode 对应的后端 strategies/combinator
@@ -22,8 +23,6 @@ function getPreset(params) {
       return { strategies: ['brickReversal'], combinator: 'AND', line: 'short' };
     case 'consecutiveLimitUp':
       return { strategies: ['consecutiveLimitUp'], combinator: 'AND' };
-    case 'whiteBelowTwenty':
-      return { strategies: ['whiteBelowTwenty'], combinator: 'AND' };
     default: // band
       return {};
   }
@@ -117,6 +116,7 @@ export default function useBacktest() {
           if (params.hasVolumeDouble) fetchParams.hasVolumeDouble = true;
           if (params.hasShrinkingPullback) fetchParams.hasShrinkingPullback = true;
           if (params.hasConsecutiveShrink) fetchParams.hasConsecutiveShrink = true;
+          if (params.whiteBelowTwenty) fetchParams.whiteBelowTwenty = true;
           const mid = await fetchBacktestResults(fetchParams);
           if (mid.data?.length) {
             setResults(mid.data);
