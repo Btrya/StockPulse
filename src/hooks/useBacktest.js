@@ -14,6 +14,7 @@ const DEFAULTS = {
   closeAboveShort: false, hasVolumeDouble: false,
   hasShrinkingPullback: false, hasConsecutiveShrink: false,
   whiteBelowTwenty: false,
+  onlyHot: false,
 };
 
 // 每种 screenMode 对应的后端 strategies/combinator

@@ -5,6 +5,7 @@ import ResultTable from './ResultTable';
 import ResultCard from './ResultCard';
 import ExportBar from './ExportBar';
 import usePostAnalysis from '../hooks/usePostAnalysis';
+import { buildHotSets, getHotReasons } from '../hooks/useHotData';
 import PostAnalysisPanel from './PostAnalysisPanel';
 import PostAnalysisStats from './PostAnalysisStats';
 import PostAnalysisTable from './PostAnalysisTable';
@@ -68,14 +69,21 @@ export default function BacktestView({
     });
   }, [results, params]);
 
-  // 本地按代码/名称过滤
+  // 本地按代码/名称过滤 + 只看热门
   const displayResults = useMemo(() => {
-    if (!stockFilter.trim()) return filteredResults;
-    const q = stockFilter.trim().toLowerCase();
-    return filteredResults.filter(r =>
-      r.code?.toLowerCase().includes(q) || r.name?.toLowerCase().includes(q)
-    );
-  }, [filteredResults, stockFilter]);
+    let list = filteredResults;
+    if (params.onlyHot) {
+      const hotSets = buildHotSets(hotData);
+      if (hotSets) list = list.filter(r => getHotReasons(r, hotSets).length > 0);
+    }
+    if (stockFilter.trim()) {
+      const q = stockFilter.trim().toLowerCase();
+      list = list.filter(r =>
+        r.code?.toLowerCase().includes(q) || r.name?.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [filteredResults, stockFilter, params.onlyHot, hotData]);
 
   const handleStartPostAnalysis = () => {
     // build tsCodes from display results (after all filtering)

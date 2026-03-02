@@ -51,6 +51,7 @@ export default function BacktestPanel({
       closeAboveShort: false, hasVolumeDouble: false,
       hasShrinkingPullback: false, hasConsecutiveShrink: false,
       whiteBelowTwenty: false,
+      onlyHot: false,
     }));
   };
 
@@ -99,6 +100,11 @@ export default function BacktestPanel({
           >
             {scanning ? '加入队列' : '开始回测'}
           </Button>
+
+          <div className="flex items-center gap-1.5">
+            <Switch checked={params.onlyHot} onChange={v => update('onlyHot', v)} size="small" />
+            <span className="text-xs text-slate-400">只看热门</span>
+          </div>
 
           {scanning && scanInfo && (
             <div className="flex-1 max-w-md">
