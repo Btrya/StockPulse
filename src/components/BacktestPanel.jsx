@@ -12,6 +12,7 @@ const SCREEN_MODE_OPTIONS = [
   { label: '波段', value: 'band' },
   { label: '砖型反转', value: 'brickReversal' },
   { label: '连板', value: 'consecutiveLimitUp' },
+  { label: '白线下20', value: 'whiteBelowTwenty' },
 ];
 
 const BOARD_OPTIONS = [

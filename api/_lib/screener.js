@@ -1,4 +1,4 @@
-import { shortTrendLine, bullBearLine, kdj, brickChart } from './indicators.js';
+import { shortTrendLine, bullBearLine, kdj, brickChart, fourLine } from './indicators.js';
 import { WIDE_J_THRESHOLD, WIDE_TOLERANCE, getMarketBoard } from './constants.js';
 
 // ── 策略注册表 ────────────────────────────────────────────
@@ -63,6 +63,40 @@ export const STRATEGIES = {
     paramKeys: [],
     test: (r) => r.consecutiveCount >= 2,
   },
+  whiteBelowTwenty: {
+    id: 'whiteBelowTwenty',
+    name: '白线下20',
+    desc: '四线归零短期线(3)≤20 且 长期线(31)≥70，短期回调买入',
+    paramKeys: [],
+    test: (r) => {
+      if (r.fl3 == null || r.fl31 == null) return false;
+      return r.fl3 <= 20 && r.fl31 >= 70;
+    },
+  },
+  // 四线归零买: 四线同时 ≤6（注释，暂不启用）
+  // fourLineZero: {
+  //   id: 'fourLineZero',
+  //   name: '四线归零',
+  //   desc: '短期/中期/中长期/长期四条线同时≤6',
+  //   paramKeys: [],
+  //   test: (r) => r.fl3 != null && r.fl3 <= 6 && r.fl10 <= 6 && r.fl21 <= 6 && r.fl31 <= 6,
+  // },
+  // 白穿红线买: 短期上穿长期且长期<20（注释，暂不启用）
+  // whiteCrossRed: {
+  //   id: 'whiteCrossRed',
+  //   name: '白穿红线',
+  //   desc: 'CROSS(短期,长期) AND 长期<20',
+  //   paramKeys: [],
+  //   test: (r) => { /* 需要前一日 fl3Prev 实现 CROSS */ },
+  // },
+  // 白穿黄线买: 短期上穿中期且中期<30（注释，暂不启用）
+  // whiteCrossYellow: {
+  //   id: 'whiteCrossYellow',
+  //   name: '白穿黄线',
+  //   desc: 'CROSS(短期,中期) AND 中期<30',
+  //   paramKeys: [],
+  //   test: (r) => { /* 需要前一日 fl3Prev 实现 CROSS */ },
+  // },
 };
 
 // 默认启用的策略（保持现有行为：J值低位 AND 触碰趋势线）
@@ -146,6 +180,7 @@ export function screenStock(stock, opts = {}) {
   if (j === null) return null;
 
   const { brick, brickPrev, brickPrev2 } = brickChart(highs, lows, closes);
+  const { fl3, fl10, fl21, fl31 } = fourLine(lows, closes);
 
   if (!opts.noFilter) {
     const jMax = opts.jThreshold ?? WIDE_J_THRESHOLD;
@@ -239,6 +274,10 @@ export function screenStock(stock, opts = {}) {
     brick: brick != null ? round2(brick) : null,
     brickPrev: brickPrev != null ? round2(brickPrev) : null,
     brickPrev2: brickPrev2 != null ? round2(brickPrev2) : null,
+    fl3: fl3 != null ? round2(fl3) : null,
+    fl10: fl10 != null ? round2(fl10) : null,
+    fl21: fl21 != null ? round2(fl21) : null,
+    fl31: fl31 != null ? round2(fl31) : null,
     limitUp,
     limitUpPrev,
     consecutiveCount,

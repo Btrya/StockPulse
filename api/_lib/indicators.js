@@ -105,6 +105,29 @@ export function bullBearLine(closes) {
   return (ma14 + ma28 + ma57 + ma114) / 4;
 }
 
+// 四线归零指标（通达信公式翻译）
+// 短期: 100*(C-LLV(L,3))/(HHV(C,3)-LLV(L,3))
+// 中期: 100*(C-LLV(L,10))/(HHV(C,10)-LLV(L,10))
+// 中长期: 100*(C-LLV(L,21))/(HHV(C,21)-LLV(L,21))
+// 长期: 100*(C-LLV(L,31))/(HHV(C,31)-LLV(L,31))
+export function fourLine(lows, closes) {
+  const len = closes.length;
+  if (len < 31) return { fl3: null, fl10: null, fl21: null, fl31: null };
+
+  const calc = (period) => {
+    let ll = Infinity;
+    let hc = -Infinity;
+    for (let i = len - period; i < len; i++) {
+      if (lows[i] < ll) ll = lows[i];
+      if (closes[i] > hc) hc = closes[i];
+    }
+    const denom = hc - ll;
+    return denom === 0 ? 50 : 100 * (closes[len - 1] - ll) / denom;
+  };
+
+  return { fl3: calc(3), fl10: calc(10), fl21: calc(21), fl31: calc(31) };
+}
+
 // 砖型图指标：返回最近三天的值（判断绿转红需要三天）
 // N=4（HHV/LLV 窗口），M=6（双重平滑周期）
 export function brickChart(highs, lows, closes, n = 4, m = 6) {

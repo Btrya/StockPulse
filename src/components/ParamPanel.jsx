@@ -11,6 +11,11 @@ const KLT_OPTIONS = [
   { label: '周线', value: 'weekly' },
 ];
 
+const SCREEN_MODE_OPTIONS = [
+  { label: '波段', value: 'band' },
+  { label: '白线下20', value: 'whiteBelowTwenty' },
+];
+
 const BOARD_OPTIONS = [
   { label: '创业板', value: 'gem' },
   { label: '科创板', value: 'star' },
@@ -111,6 +116,18 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
                   : { dailyLowJ: false };
                 setParams(prev => ({ ...prev, klt: v, ...clear }));
               }}
+              optionType="button"
+              buttonStyle="solid"
+              size="middle"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-slate-400">筛选模式</span>
+            <Radio.Group
+              options={SCREEN_MODE_OPTIONS}
+              value={params.screenMode || 'band'}
+              onChange={e => update('screenMode', e.target.value)}
               optionType="button"
               buttonStyle="solid"
               size="middle"
@@ -229,7 +246,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </Button>
             <Button
               icon={<ReloadOutlined />}
-              onClick={() => { setParams({ klt: 'daily', j: 0, tolerance: 2, jMode: 'fixed', industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, closeAboveShort: false, hasVolumeDouble: false, hasShrinkingPullback: false, hasConsecutiveShrink: false }); setDate(getLastTradingDate()); }}
+              onClick={() => { setParams({ klt: 'daily', j: 0, tolerance: 2, jMode: 'fixed', screenMode: 'band', industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, closeAboveShort: false, hasVolumeDouble: false, hasShrinkingPullback: false, hasConsecutiveShrink: false }); setDate(getLastTradingDate()); }}
             >
               重置
             </Button>

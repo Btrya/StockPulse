@@ -195,6 +195,32 @@ const arrangementCol = {
   },
 };
 
+// 四线归零列（白线下20策略）
+const fl3Col = {
+  title: '短期(3)',
+  dataIndex: 'fl3',
+  width: 80,
+  align: 'right',
+  sorter: (a, b) => (a.fl3 ?? 0) - (b.fl3 ?? 0),
+  render: v => {
+    if (v == null) return '-';
+    const color = v <= 20 ? '#4ade80' : v >= 80 ? '#f87171' : '#cbd5e1';
+    return <span className="num" style={{ color }}>{v}</span>;
+  },
+};
+const fl31Col = {
+  title: '长期(31)',
+  dataIndex: 'fl31',
+  width: 80,
+  align: 'right',
+  sorter: (a, b) => (a.fl31 ?? 0) - (b.fl31 ?? 0),
+  render: v => {
+    if (v == null) return '-';
+    const color = v >= 70 ? '#f87171' : v <= 20 ? '#4ade80' : '#cbd5e1';
+    return <span className="num" style={{ color }}>{v}</span>;
+  },
+};
+
 // 连板数列
 const consecutiveCol = {
   title: '连板',
@@ -210,6 +236,7 @@ export default function ResultTable({ data, hotData, subTab, jMode }) {
   const hotSets = useMemo(() => buildHotSets(hotData), [hotData]);
   const isLimitUp = subTab === 'consecutiveLimitUp';
   const isBrick = subTab === 'brickReversal';
+  const isWhiteBelow = subTab === 'whiteBelowTwenty';
 
   // 动态生成行业 & 概念 filter
   const industries = [...new Set(data.map(r => r.industry).filter(Boolean))];
@@ -233,6 +260,15 @@ export default function ResultTable({ data, hotData, subTab, jMode }) {
     // 在 J 值列后插入 sensitiveJ 列
     const jPos = baseCols.findIndex(c => c.dataIndex === 'j');
     if (jPos >= 0) baseCols.splice(jPos + 1, 0, sensitiveJCol);
+  } else if (isWhiteBelow) {
+    const idx = columns.findIndex(c => c.dataIndex === 'close');
+    baseCols = [
+      ...columns.slice(0, idx + 1),
+      changeCol,
+      fl3Col,
+      fl31Col,
+      ...columns.slice(idx + 1),
+    ];
   } else {
     baseCols = [...columns];
     if (jMode === 'dynamic') {

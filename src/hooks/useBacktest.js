@@ -22,6 +22,8 @@ function getPreset(params) {
       return { strategies: ['brickReversal'], combinator: 'AND', line: 'short' };
     case 'consecutiveLimitUp':
       return { strategies: ['consecutiveLimitUp'], combinator: 'AND' };
+    case 'whiteBelowTwenty':
+      return { strategies: ['whiteBelowTwenty'], combinator: 'AND' };
     default: // band
       return {};
   }
@@ -43,11 +45,8 @@ export default function useBacktest() {
     try {
       const preset = getPreset(p);
       const fetchParams = { date: d, ...p, ...preset };
-      // 砖型反转/连板模式下用宽阈值取全量，客户端再筛
-      if (p.screenMode === 'brickReversal') {
-        fetchParams.j = 100;
-        fetchParams.tolerance = 100;
-      } else if (p.screenMode === 'consecutiveLimitUp') {
+      // 非波段模式下用宽阈值取全量，客户端再筛
+      if (p.screenMode !== 'band') {
         fetchParams.j = 100;
         fetchParams.tolerance = 100;
       }
@@ -110,7 +109,7 @@ export default function useBacktest() {
             concepts: params.concepts, dynamicJ: params.dynamicJ,
             ...preset,
           };
-          if (params.screenMode === 'brickReversal' || params.screenMode === 'consecutiveLimitUp') {
+          if (params.screenMode !== 'band') {
             fetchParams.j = 100;
             fetchParams.tolerance = 100;
           }

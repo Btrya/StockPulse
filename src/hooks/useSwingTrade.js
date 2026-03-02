@@ -12,6 +12,10 @@ const PRESETS = {
     strategies: ['consecutiveLimitUp'],
     combinator: 'AND',
   },
+  whiteBelowTwenty: {
+    strategies: ['whiteBelowTwenty'],
+    combinator: 'AND',
+  },
 };
 
 export default function useSwingTrade() {

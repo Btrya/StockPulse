@@ -25,6 +25,7 @@ export default function ResultCard({ item, hotData, subTab }) {
   const isHot = reasons.length > 0;
   const isLimitUp = subTab === 'consecutiveLimitUp';
   const isBrick = subTab === 'brickReversal';
+  const isWhiteBelow = subTab === 'whiteBelowTwenty';
 
   return (
     <Card size="small" className={isHot ? 'hot-card' : ''}>
@@ -86,6 +87,24 @@ export default function ResultCard({ item, hotData, subTab }) {
                 <span style={{ color: '#f87171' }}>{item.brick}</span>
                 {item.brick > item.brickPrev2 && <span className="ml-1 text-amber-400">&#9650;</span>}
               </span>
+            </div>
+          </>
+        )}
+        {isWhiteBelow && (
+          <>
+            <div className="flex justify-between">
+              <span className="text-slate-500">涨幅</span>
+              <span className="num" style={{ color: item.change > 0 ? '#f87171' : item.change < 0 ? '#4ade80' : '#cbd5e1' }}>
+                {item.change > 0 ? '+' : ''}{item.change}%
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">短期(3)</span>
+              <span className="num" style={{ color: item.fl3 <= 20 ? '#4ade80' : '#cbd5e1' }}>{item.fl3 ?? '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">长期(31)</span>
+              <span className="num" style={{ color: item.fl31 >= 70 ? '#f87171' : '#cbd5e1' }}>{item.fl31 ?? '-'}</span>
             </div>
           </>
         )}
