@@ -38,7 +38,7 @@ export default function ExportBar({ data, filename }) {
     <>
       <span className="relative inline-flex items-center ml-2 group">
         <span className="text-slate-500 cursor-default select-none">导出</span>
-        <span className="absolute left-0 top-full hidden group-hover:inline-flex gap-1 z-10 bg-slate-800 border border-slate-600 rounded px-1.5 py-1 shadow-lg whitespace-nowrap">
+        <span className="absolute left-0 bottom-full mb-1 hidden group-hover:inline-flex gap-1 z-50 bg-slate-800 border border-slate-600 rounded px-1.5 py-1 shadow-lg whitespace-nowrap">
           <button
             onClick={() => setOpen(true)}
             className="px-2 py-0.5 rounded text-xs bg-slate-700 hover:bg-slate-600 text-slate-300"
