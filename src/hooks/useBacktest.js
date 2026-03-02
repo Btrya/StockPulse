@@ -130,6 +130,7 @@ export default function useBacktest() {
           setScanning(false);
           setScanInfo(null);
           setQueue([]);
+          queryResults(effectiveDate, params);
         }
       } catch (err) {
         console.error('Backtest failed:', err);

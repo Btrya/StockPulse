@@ -111,7 +111,7 @@ export default function BacktestView({
         scanning={scanning}
         scanInfo={scanInfo}
         loading={loading}
-        hasResults={results.length > 0}
+        hasResults={!!(meta || results.length)}
         stockFilter={stockFilter}
         onStockFilterChange={setStockFilter}
         hotData={hotData}
@@ -180,6 +180,11 @@ export default function BacktestView({
           <Spin size="large" />
           <p className="mt-4 text-slate-400">回测扫描中，等待中间结果...</p>
         </div>
+      ) : meta ? (
+        <Empty
+          description="当前筛选条件下没有符合的股票，请调整上方筛选参数后点击「筛选」"
+          className="py-12"
+        />
       ) : date ? (
         <Empty
           description="暂无回测数据，请选择日期并点击「开始回测」"
