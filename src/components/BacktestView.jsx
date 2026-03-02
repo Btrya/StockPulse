@@ -18,7 +18,15 @@ export default function BacktestView({
   sharedIndustries, sharedConcepts,
   hotData,
 }) {
-  const pa = usePostAnalysis(date, params.klt);
+  // 从 backtest params 构造入场过滤条件，透传给后验分析
+  const paFilters = useMemo(() => ({
+    closeAboveShort: params.closeAboveShort,
+    hasVolumeDouble: params.hasVolumeDouble,
+    hasShrinkingPullback: params.hasShrinkingPullback,
+    hasConsecutiveShrink: params.hasConsecutiveShrink,
+  }), [params.closeAboveShort, params.hasVolumeDouble, params.hasShrinkingPullback, params.hasConsecutiveShrink]);
+
+  const pa = usePostAnalysis(date, params.klt, paFilters);
 
   useEffect(() => {
     return () => { cleanup(); pa.cleanup(); };
@@ -33,9 +41,45 @@ export default function BacktestView({
     }
   };
 
+  // 砖型反转客户端二次筛选
+  const filteredResults = useMemo(() => {
+    if (params.screenMode !== 'brickReversal') return results;
+
+    return results.filter(r => {
+      if (params.maxGain != null && Math.abs(r.change) > params.maxGain) return false;
+      if (!params.dynamicJ && params.maxJ != null && r.j >= params.maxJ) return false;
+      if (params.arrangement === 'bull' && r.shortTrend <= r.bullBear) return false;
+      if (params.arrangement === 'bear' && r.shortTrend > r.bullBear) return false;
+      if (params.nearLine) {
+        const nearShort = Math.abs(r.deviationShort) <= 2;
+        const nearBull = Math.abs(r.deviationBull) <= 2;
+        if (!nearShort && !nearBull) return false;
+      }
+      if (params.redGtGreen && !(r.brick > r.brickPrev2)) return false;
+      if (params.upperLeBody && !(r.body > 0 && r.upperShadow <= r.body)) return false;
+      if (params.weeklyBull && r.weeklyBull !== true) return false;
+      if (params.weeklyLowJ && !(r.weeklyJ != null && r.weeklyJ < 13)) return false;
+      if (params.closeAboveShort && r.closeAboveShort !== true) return false;
+      if (params.hasVolumeDouble && r.hasVolumeDouble !== true) return false;
+      if (params.hasShrinkingPullback && r.hasShrinkingPullback !== true) return false;
+      if (params.hasConsecutiveShrink && r.hasConsecutiveShrink !== true) return false;
+      if (params.dynamicJ && !(r.sensitiveJ != null && r.j < r.sensitiveJ)) return false;
+      return true;
+    });
+  }, [results, params]);
+
+  // 本地按代码/名称过滤
+  const displayResults = useMemo(() => {
+    if (!stockFilter.trim()) return filteredResults;
+    const q = stockFilter.trim().toLowerCase();
+    return filteredResults.filter(r =>
+      r.code?.toLowerCase().includes(q) || r.name?.toLowerCase().includes(q)
+    );
+  }, [filteredResults, stockFilter]);
+
   const handleStartPostAnalysis = () => {
-    // build tsCodes from filtered results
-    const tsCodes = results.map(r => ({
+    // build tsCodes from display results (after all filtering)
+    const tsCodes = displayResults.map(r => ({
       tsCode: r.ts_code,
       code: r.code,
       name: r.name,
@@ -44,20 +88,14 @@ export default function BacktestView({
     pa.start(tsCodes);
   };
 
-  // 本地按代码/名称过滤
-  const displayResults = useMemo(() => {
-    if (!stockFilter.trim()) return results;
-    const q = stockFilter.trim().toLowerCase();
-    return results.filter(r =>
-      r.code?.toLowerCase().includes(q) || r.name?.toLowerCase().includes(q)
-    );
-  }, [results, stockFilter]);
-
   // 结果筛选器：用回测结果的行业/概念列表，fallback 到共享列表
   const resultIndustries = meta?.industries?.length ? meta.industries : (sharedIndustries || []);
   const resultConcepts = meta?.concepts?.length ? meta.concepts : (sharedConcepts || []);
 
   const filename = `回测-${meta?.scanDate || date || new Date().toISOString().slice(0, 10)}`;
+
+  // 砖型反转/连板传 subTab 给 ResultTable 做列切换
+  const subTab = params.screenMode !== 'band' ? params.screenMode : undefined;
 
   return (
     <div>
@@ -92,8 +130,10 @@ export default function BacktestView({
           {meta && (
             <div className="flex items-center justify-between mb-3 text-xs text-slate-400">
               <span>
-                共 {meta.total} 只符合条件
-                {meta.wideTotal ? ` (全量 ${meta.wideTotal} 只)` : ''}
+                共 {displayResults.length} 只符合条件
+                {params.screenMode === 'brickReversal' && results.length !== displayResults.length
+                  ? ` (反转信号 ${results.length} 只)`
+                  : meta.wideTotal ? ` (全量 ${meta.wideTotal} 只)` : ''}
                 {stockFilter.trim() ? ` → 搜索到 ${displayResults.length} 只` : ''}
                 <ExportBar data={displayResults} filename={filename} />
               </span>
@@ -102,12 +142,12 @@ export default function BacktestView({
           )}
 
           <div className="hidden md:block">
-            <ResultTable data={displayResults} hotData={hotData} jMode={params.dynamicJ ? 'dynamic' : undefined} />
+            <ResultTable data={displayResults} hotData={hotData} subTab={subTab} jMode={params.dynamicJ ? 'dynamic' : undefined} />
           </div>
 
           <div className="md:hidden flex flex-col gap-3">
             {displayResults.map(item => (
-              <ResultCard key={item.code} item={item} hotData={hotData} />
+              <ResultCard key={item.code} item={item} hotData={hotData} subTab={subTab} />
             ))}
           </div>
 
@@ -121,14 +161,12 @@ export default function BacktestView({
                   <PostAnalysisPanel
                     strategies={pa.strategies}
                     setStrategies={pa.setStrategies}
-                    filters={pa.filters}
-                    setFilters={pa.setFilters}
                     window={pa.window}
                     setWindow={pa.setWindow}
                     loading={pa.loading}
                     progress={pa.progress}
                     onStart={handleStartPostAnalysis}
-                    disabled={!results.length || pa.loading}
+                    disabled={!displayResults.length || pa.loading}
                   />
                   {pa.stats && <PostAnalysisStats stats={pa.stats} />}
                   {pa.trades.length > 0 && <PostAnalysisTable data={pa.trades} />}

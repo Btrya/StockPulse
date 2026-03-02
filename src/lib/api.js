@@ -85,6 +85,13 @@ export function fetchBacktestResults(params) {
   if (params.excludeBoards?.length) qs.set('excludeBoards', params.excludeBoards.join(','));
   if (params.concepts?.length) qs.set('concepts', params.concepts.join(','));
   if (params.dynamicJ) qs.set('dynamicJ', '1');
+  if (params.strategies?.length) qs.set('strategies', params.strategies.join(','));
+  if (params.combinator) qs.set('combinator', params.combinator);
+  if (params.line) qs.set('line', params.line);
+  if (params.closeAboveShort) qs.set('closeAboveShort', '1');
+  if (params.hasVolumeDouble) qs.set('hasVolumeDouble', '1');
+  if (params.hasShrinkingPullback) qs.set('hasShrinkingPullback', '1');
+  if (params.hasConsecutiveShrink) qs.set('hasConsecutiveShrink', '1');
   return request(`/backtest-results?${qs}`);
 }
 
@@ -109,5 +116,6 @@ export function fetchPostAnalysisData(params) {
   qs.set('date', params.date);
   if (params.klt) qs.set('klt', params.klt);
   if (params.window != null) qs.set('window', String(params.window));
+  if (params.codesHash) qs.set('codesHash', params.codesHash);
   return request(`/post-analysis-data?${qs}`);
 }

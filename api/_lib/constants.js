@@ -27,7 +27,7 @@ export const KEY = {
   HOT_DATA: 'hot:data',
   BULK_PROGRESS: 'bulk:progress',
   bulkDate: (klt, td) => `bulk:${klt}:${td}`,
-  postAnalysis: (date, klt, window) => `pa:${date}:${klt}:${window}`,
+  postAnalysis: (date, klt, window, codesHash) => `pa:${date}:${klt}:${window}:${codesHash || ''}`,
   PA_PROGRESS: 'pa:progress',
   kline: (tsCode, klt) => `kl:${tsCode}:${klt}`,
   JPROFILE_MAP: 'jprofile:map',
@@ -95,6 +95,16 @@ export function getLastTradingDate(now = new Date()) {
   if (day === 0) d.setDate(d.getDate() - 2);      // Sun → Fri
   else if (day === 6) d.setDate(d.getDate() - 1);  // Sat → Fri
   return d.toISOString().slice(0, 10);
+}
+
+// 对股票列表计算简单 hash（排序后取前 8 位 hex）
+export function hashCodes(tsCodes) {
+  const str = tsCodes.map(t => t.tsCode || t).sort().join(',');
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  }
+  return (h >>> 0).toString(16).padStart(8, '0');
 }
 
 // 将日期对齐到该周周五（周线数据以周五为基准）

@@ -1,5 +1,5 @@
 import * as redis from './_lib/redis.js';
-import { KEY, TTL, TUSHARE_DELAY_MS } from './_lib/constants.js';
+import { KEY, TTL, TUSHARE_DELAY_MS, hashCodes } from './_lib/constants.js';
 import { getDailyRange, getWeeklyRange } from './_lib/tushare.js';
 import { shortTrendLine, bullBearLine } from './_lib/indicators.js';
 
@@ -132,6 +132,7 @@ export default async function handler(req, res) {
   const startTime = Date.now();
   const body = req.body || {};
   const { date, klt = 'daily', window: win = 30, tsCodes, reset } = body;
+  const codesHash = body.codesHash || (tsCodes ? hashCodes(tsCodes) : '');
 
   if (!date || !tsCodes?.length) {
     return res.status(400).json({ error: '缺少 date 或 tsCodes 参数' });
@@ -142,22 +143,27 @@ export default async function handler(req, res) {
       return res.json({ error: 'Redis 未配置' });
     }
 
-    const cacheKey = KEY.postAnalysis(date, klt, win);
+    const cacheKey = KEY.postAnalysis(date, klt, win, codesHash);
 
     // check cache
     if (!reset) {
       const cached = await redis.get(cacheKey);
       if (cached) {
-        return res.json({ done: true, data: cached });
+        return res.json({ done: true, data: cached, codesHash });
       }
     }
 
     // check in-progress
     let progress = await redis.get(KEY.PA_PROGRESS);
 
-    if (reset || !progress || progress.date !== date || progress.klt !== klt || progress.window !== win) {
+    if (reset || !progress || progress.date !== date || progress.klt !== klt || progress.window !== win || progress.codesHash !== codesHash) {
+      // reset 时删除旧缓存
+      if (reset && progress?.codesHash) {
+        await redis.del(KEY.postAnalysis(date, klt, win, progress.codesHash));
+      }
       progress = {
         date, klt, window: win,
+        codesHash,
         tsCodes,
         idx: 0,
         results: [],
@@ -214,7 +220,7 @@ export default async function handler(req, res) {
       fetch(selfUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, klt, window: win, tsCodes: progress.tsCodes }),
+        body: JSON.stringify({ date, klt, window: win, tsCodes: progress.tsCodes, codesHash }),
       }).catch(() => {});
     }
 
@@ -223,6 +229,7 @@ export default async function handler(req, res) {
       idx,
       total: progress.tsCodes.length,
       data: done ? results : null,
+      codesHash,
     });
   } catch (err) {
     console.error('post-analysis error:', err);

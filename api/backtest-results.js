@@ -19,6 +19,13 @@ export default async function handler(req, res) {
     const excludeBoards = req.query.excludeBoards ? req.query.excludeBoards.split(',').filter(Boolean) : [];
     const concepts = req.query.concepts ? req.query.concepts.split(',').filter(Boolean) : [];
     const dynamicJ = req.query.dynamicJ === '1';
+    const strategies = req.query.strategies ? req.query.strategies.split(',').filter(Boolean) : [];
+    const combinator = req.query.combinator || undefined;
+    const line = req.query.line || undefined;
+    const closeAboveShort = req.query.closeAboveShort === '1';
+    const hasVolumeDouble = req.query.hasVolumeDouble === '1';
+    const hasShrinkingPullback = req.query.hasShrinkingPullback === '1';
+    const hasConsecutiveShrink = req.query.hasConsecutiveShrink === '1';
 
     if (!redis.isConfigured()) {
       return res.json({ data: [], meta: { error: 'Redis 未配置' } });
@@ -62,7 +69,12 @@ export default async function handler(req, res) {
       (a, b) => a.localeCompare(b, 'zh-CN')
     );
 
-    const filtered = filterResults(data, { jThreshold: j, tolerance, industries, excludeBoards, concepts, dynamicJ });
+    const filtered = filterResults(data, {
+      jThreshold: j, tolerance, industries, excludeBoards, concepts, dynamicJ,
+      strategies: strategies.length ? strategies : undefined,
+      combinator, line,
+      closeAboveShort, hasVolumeDouble, hasShrinkingPullback, hasConsecutiveShrink,
+    });
 
     filtered.sort((a, b) => {
       const va = a[sort] ?? 0;

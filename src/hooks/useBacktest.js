@@ -1,7 +1,31 @@
 import { useState, useCallback, useRef } from 'react';
 import { triggerBacktest, fetchBacktestResults } from '../lib/api';
 
-const DEFAULTS = { klt: 'daily', j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], dynamicJ: false };
+const DEFAULTS = {
+  klt: 'daily', j: 0, tolerance: 2,
+  industries: [], excludeBoards: [], concepts: [],
+  dynamicJ: false,
+  screenMode: 'band',
+  // 砖型反转客户端筛选参数
+  maxGain: null, maxJ: null, arrangement: 'any',
+  nearLine: false, redGtGreen: false, upperLeBody: false,
+  weeklyBull: false, weeklyLowJ: false,
+  // 入场条件（波段/砖型共用）
+  closeAboveShort: false, hasVolumeDouble: false,
+  hasShrinkingPullback: false, hasConsecutiveShrink: false,
+};
+
+// 每种 screenMode 对应的后端 strategies/combinator
+function getPreset(params) {
+  switch (params.screenMode) {
+    case 'brickReversal':
+      return { strategies: ['brickReversal'], combinator: 'AND', line: 'short' };
+    case 'consecutiveLimitUp':
+      return { strategies: ['consecutiveLimitUp'], combinator: 'AND' };
+    default: // band
+      return {};
+  }
+}
 
 export default function useBacktest() {
   const [params, setParams] = useState(DEFAULTS);
@@ -17,7 +41,17 @@ export default function useBacktest() {
   const queryResults = useCallback(async (d, p) => {
     setLoading(true);
     try {
-      const res = await fetchBacktestResults({ date: d, ...p });
+      const preset = getPreset(p);
+      const fetchParams = { date: d, ...p, ...preset };
+      // 砖型反转/连板模式下用宽阈值取全量，客户端再筛
+      if (p.screenMode === 'brickReversal') {
+        fetchParams.j = 100;
+        fetchParams.tolerance = 100;
+      } else if (p.screenMode === 'consecutiveLimitUp') {
+        fetchParams.j = 100;
+        fetchParams.tolerance = 100;
+      }
+      const res = await fetchBacktestResults(fetchParams);
       setResults(res.data || []);
       setMeta(res.meta || null);
     } catch (err) {
@@ -68,7 +102,23 @@ export default function useBacktest() {
 
         // 每轮 poll 后静默获取中间结果，实时渲染已筛出数据
         try {
-          const mid = await fetchBacktestResults({ date: effectiveDate, klt, j: params.j, tolerance: params.tolerance, industries: params.industries, excludeBoards: params.excludeBoards, concepts: params.concepts, dynamicJ: params.dynamicJ });
+          const preset = getPreset(params);
+          const fetchParams = {
+            date: effectiveDate, klt,
+            j: params.j, tolerance: params.tolerance,
+            industries: params.industries, excludeBoards: params.excludeBoards,
+            concepts: params.concepts, dynamicJ: params.dynamicJ,
+            ...preset,
+          };
+          if (params.screenMode === 'brickReversal' || params.screenMode === 'consecutiveLimitUp') {
+            fetchParams.j = 100;
+            fetchParams.tolerance = 100;
+          }
+          if (params.closeAboveShort) fetchParams.closeAboveShort = true;
+          if (params.hasVolumeDouble) fetchParams.hasVolumeDouble = true;
+          if (params.hasShrinkingPullback) fetchParams.hasShrinkingPullback = true;
+          if (params.hasConsecutiveShrink) fetchParams.hasConsecutiveShrink = true;
+          const mid = await fetchBacktestResults(fetchParams);
           if (mid.data?.length) {
             setResults(mid.data);
             setMeta(mid.meta || null);
