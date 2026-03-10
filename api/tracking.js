@@ -3,10 +3,11 @@ import { KEY, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS, TRACKING
 import { filterResults } from './_lib/screener.js';
 import { requireRole } from './_lib/auth.js';
 import { recordEvent } from './_lib/stats.js';
+import { PERMISSIONS } from './_lib/permissions.js';
 
 export default async function handler(req, res) {
   try {
-    const session = await requireRole(req, res, 'premium');
+    const session = await requireRole(req, res, PERMISSIONS.tab_tracking);
     if (!session) return;
     const { role, email } = session;
     recordEvent(email, 'tracking');

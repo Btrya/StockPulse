@@ -6,12 +6,13 @@ import { filterResults } from './_lib/screener.js';
 import { bulkScan } from './_lib/bulk-scan.js';
 import { requireRole } from './_lib/auth.js';
 import { recordEvent } from './_lib/stats.js';
+import { PERMISSIONS } from './_lib/permissions.js';
 
 const SCREEN_TTL = { daily: TTL.SCREEN_RESULT_DAILY, weekly: TTL.SCREEN_RESULT_WEEKLY };
 const TIMEOUT_MS = 50000;
 
 export default async function handler(req, res) {
-  const session = await requireRole(req, res, 'premium');
+  const session = await requireRole(req, res, PERMISSIONS.tab_backtest);
   if (!session) return;
   const { email } = session;
 

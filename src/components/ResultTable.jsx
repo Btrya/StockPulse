@@ -150,7 +150,7 @@ const sensitiveJCol = {
 // 连板模式隐藏的列
 const LIMIT_UP_HIDE = ['deviationShort', 'shortTrend', 'deviationBull', 'bullBear', 'j'];
 
-// 砖型反转额外列
+// 大力反转额外列
 const changeCol = {
   title: '涨幅',
   dataIndex: 'change',
@@ -178,7 +178,7 @@ const brickCol = {
         <span style={{ color: '#4ade80' }}>{r.brickPrev2}</span>
         <span className="text-slate-500 mx-0.5">&rarr;</span>
         <span style={{ color: '#f87171' }}>{v}</span>
-        {isRedGtGreen && <span className="ml-1 text-amber-400" title="红砖>绿砖">&#9650;</span>}
+        {isRedGtGreen && <span className="ml-1 text-amber-400" title="超大力！！！>&#9650;</span>}
       </span>
     );
   },
@@ -232,7 +232,7 @@ const consecutiveCol = {
   render: v => v ? <Tag color={v >= 5 ? 'red' : v >= 3 ? 'orange' : 'blue'}>{v} 板</Tag> : '-',
 };
 
-export default function ResultTable({ data, hotData, subTab, jMode }) {
+export default function ResultTable({ data, hotData, subTab, jMode, showJ = true }) {
   const hotSets = useMemo(() => buildHotSets(hotData), [hotData]);
   const isLimitUp = subTab === 'consecutiveLimitUp';
   const isBrick = subTab === 'brickReversal';
@@ -247,7 +247,7 @@ export default function ResultTable({ data, hotData, subTab, jMode }) {
   if (isLimitUp) {
     baseCols = [...columns.filter(c => !LIMIT_UP_HIDE.includes(c.dataIndex)), consecutiveCol];
   } else if (isBrick) {
-    // 砖型反转：在收盘后插入涨幅、砖型、排列列
+    // 大力反转：在收盘后插入涨幅、砖型、排列列
     const idx = columns.findIndex(c => c.dataIndex === 'close');
     baseCols = [
       ...columns.slice(0, idx + 1),
@@ -257,14 +257,20 @@ export default function ResultTable({ data, hotData, subTab, jMode }) {
       ...columns.slice(idx + 1),
     ];
     // 在 J 值列后插入 sensitiveJ 列
-    const jPos = baseCols.findIndex(c => c.dataIndex === 'j');
-    if (jPos >= 0) baseCols.splice(jPos + 1, 0, sensitiveJCol);
-  } else {
-    baseCols = [...columns];
-    if (jMode === 'dynamic') {
+    if (showJ) {
       const jPos = baseCols.findIndex(c => c.dataIndex === 'j');
       if (jPos >= 0) baseCols.splice(jPos + 1, 0, sensitiveJCol);
     }
+  } else {
+    baseCols = [...columns];
+    if (showJ && jMode === 'dynamic') {
+      const jPos = baseCols.findIndex(c => c.dataIndex === 'j');
+      if (jPos >= 0) baseCols.splice(jPos + 1, 0, sensitiveJCol);
+    }
+  }
+
+  if (!showJ) {
+    baseCols = baseCols.filter(c => c.dataIndex !== 'j' && c.dataIndex !== 'sensitiveJ');
   }
 
   const cols = baseCols.map(c => {

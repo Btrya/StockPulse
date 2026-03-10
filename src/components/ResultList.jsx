@@ -4,8 +4,12 @@ import ResultTable from './ResultTable';
 import ResultCard from './ResultCard';
 import ExportBar from './ExportBar';
 import { buildHotSets, getHotReasons } from '../hooks/useHotData';
+import { useAuth } from '../contexts/AuthContext';
+import { can } from '../lib/permissions';
 
 export default function ResultList({ results, meta, loading, hotData, jMode, onlyHot }) {
+  const { role } = useAuth();
+  const showJ = can(role, 'param_jThreshold');
 
   if (loading) {
     return (
@@ -58,12 +62,12 @@ export default function ResultList({ results, meta, loading, hotData, jMode, onl
       )}
 
       <div className="hidden md:block">
-        <ResultTable data={displayResults} hotData={hotData} jMode={jMode} />
+        <ResultTable data={displayResults} hotData={hotData} jMode={jMode} showJ={showJ} />
       </div>
 
       <div className="md:hidden flex flex-col gap-3">
         {displayResults.map(item => (
-          <ResultCard key={item.code} item={item} hotData={hotData} />
+          <ResultCard key={item.code} item={item} hotData={hotData} showJ={showJ} />
         ))}
       </div>
     </div>

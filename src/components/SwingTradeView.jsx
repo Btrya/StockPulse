@@ -5,6 +5,8 @@ import ResultCard from './ResultCard';
 import ExportBar from './ExportBar';
 import { buildHotSets, getHotReasons } from '../hooks/useHotData';
 import { getLastTradingDate } from '../lib/date';
+import { useAuth } from '../contexts/AuthContext';
+import { can } from '../lib/permissions';
 import dayjs from 'dayjs';
 
 const BOARD_OPTIONS = [
@@ -35,12 +37,16 @@ export default function SwingTradeView({
   results, rawTotal, meta, loading,
   hotData,
 }) {
+  const { role } = useAuth();
+  const p = key => can(role, key);
+
   const subItems = [
     { key: 'brickReversal', label: '大力反转' },
     { key: 'consecutiveLimitUp', label: '连板' },
   ];
 
   const isBrick = subTab === 'brickReversal';
+  const showJ = p('param_jThreshold');
 
   const displayResults = useMemo(() => {
     if (!onlyHot) return results;
@@ -84,22 +90,24 @@ export default function SwingTradeView({
 
       {isBrick && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4 px-3 py-2.5 rounded-lg bg-slate-800/50 border border-slate-700/50 text-xs">
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-400">涨幅 &le;</span>
-            <InputNumber
-              value={maxGain}
-              onChange={setMaxGain}
-              placeholder="不限"
-              min={0}
-              max={20}
-              step={1}
-              size="small"
-              style={{ width: 70 }}
-            />
-            <span className="text-slate-400">%</span>
-          </div>
+          {p('param_maxGain') && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-400">涨幅 &le;</span>
+              <InputNumber
+                value={maxGain}
+                onChange={setMaxGain}
+                placeholder="不限"
+                min={0}
+                max={20}
+                step={1}
+                size="small"
+                style={{ width: 70 }}
+              />
+              <span className="text-slate-400">%</span>
+            </div>
+          )}
 
-          {!dynamicJ && (
+          {showJ && !dynamicJ && (
             <div className="flex items-center gap-1.5">
               <span className="text-slate-400">J &lt;</span>
               <InputNumber
@@ -115,120 +123,144 @@ export default function SwingTradeView({
             </div>
           )}
 
-          <div className="flex items-center gap-1.5">
-            <span className="text-slate-400">排列</span>
-            <Radio.Group
-              value={arrangement}
-              onChange={e => setArrangement(e.target.value)}
-              optionType="button"
-              buttonStyle="solid"
-              size="small"
-              options={[
-                { label: '不限', value: 'any' },
-                { label: '多头', value: 'bull' },
-                { label: '空头', value: 'bear' },
-              ]}
-            />
-          </div>
+          {p('param_arrangement') && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-400">排列</span>
+              <Radio.Group
+                value={arrangement}
+                onChange={e => setArrangement(e.target.value)}
+                optionType="button"
+                buttonStyle="solid"
+                size="small"
+                options={[
+                  { label: '不限', value: 'any' },
+                  { label: '多头', value: 'bull' },
+                  { label: '空头', value: 'bear' },
+                ]}
+              />
+            </div>
+          )}
 
-          <div className="flex items-center gap-1.5">
-            <Switch
-              checked={nearLine}
-              onChange={setNearLine}
-              size="small"
-            />
-            <span className="text-slate-400">触碰趋势线</span>
-          </div>
+          {p('param_nearLine') && (
+            <div className="flex items-center gap-1.5">
+              <Switch
+                checked={nearLine}
+                onChange={setNearLine}
+                size="small"
+              />
+              <span className="text-slate-400">触碰趋势线</span>
+            </div>
+          )}
 
-          <div className="flex items-center gap-1.5">
-            <Switch
-              checked={redGtGreen}
-              onChange={setRedGtGreen}
-              size="small"
-            />
-            <span className="text-slate-400">红砖&gt;绿砖</span>
-          </div>
+          {p('param_redGtGreen') && (
+            <div className="flex items-center gap-1.5">
+              <Switch
+                checked={redGtGreen}
+                onChange={setRedGtGreen}
+                size="small"
+              />
+              <span className="text-slate-400">红砖&gt;绿砖</span>
+            </div>
+          )}
 
-          <div className="flex items-center gap-1.5">
-            <Switch
-              checked={upperLeBody}
-              onChange={setUpperLeBody}
-              size="small"
-            />
-            <span className="text-slate-400">上影线&le;实体</span>
-          </div>
+          {p('param_upperLeBody') && (
+            <div className="flex items-center gap-1.5">
+              <Switch
+                checked={upperLeBody}
+                onChange={setUpperLeBody}
+                size="small"
+              />
+              <span className="text-slate-400">上影线&le;实体</span>
+            </div>
+          )}
 
-          <div className="flex items-center gap-1.5">
-            <Switch
-              checked={weeklyBull}
-              onChange={setWeeklyBull}
-              size="small"
-            />
-            <span className="text-slate-400">周线多头</span>
-          </div>
+          {p('param_weeklyBull') && (
+            <div className="flex items-center gap-1.5">
+              <Switch
+                checked={weeklyBull}
+                onChange={setWeeklyBull}
+                size="small"
+              />
+              <span className="text-slate-400">周线多头</span>
+            </div>
+          )}
 
-          <div className="flex items-center gap-1.5">
-            <Switch
-              checked={weeklyLowJ}
-              onChange={setWeeklyLowJ}
-              size="small"
-            />
-            <span className="text-slate-400">周线低位</span>
-          </div>
+          {p('param_weeklyLowJ') && (
+            <div className="flex items-center gap-1.5">
+              <Switch
+                checked={weeklyLowJ}
+                onChange={setWeeklyLowJ}
+                size="small"
+              />
+              <span className="text-slate-400">周线低位</span>
+            </div>
+          )}
 
-          <div className="flex items-center gap-1.5">
-            <Switch
-              checked={dynamicJ}
-              onChange={setDynamicJ}
-              size="small"
-            />
-            <span className="text-slate-400">动态J值</span>
-          </div>
+          {p('param_jMode') && (
+            <div className="flex items-center gap-1.5">
+              <Switch
+                checked={dynamicJ}
+                onChange={setDynamicJ}
+                size="small"
+              />
+              <span className="text-slate-400">动态J值</span>
+            </div>
+          )}
 
-          <div className="flex items-center gap-1.5">
-            <Switch
-              checked={closeAboveShort}
-              onChange={setCloseAboveShort}
-              size="small"
-            />
-            <span className="text-slate-400">收盘&gt;短趋</span>
-          </div>
+          {p('param_closeAboveShort') && (
+            <div className="flex items-center gap-1.5">
+              <Switch
+                checked={closeAboveShort}
+                onChange={setCloseAboveShort}
+                size="small"
+              />
+              <span className="text-slate-400">收盘&gt;短趋</span>
+            </div>
+          )}
 
-          <div className="flex items-center gap-1.5">
-            <Switch
-              checked={hasVolumeDouble}
-              onChange={setHasVolumeDouble}
-              size="small"
-            />
-            <span className="text-slate-400">倍量</span>
-          </div>
+          {p('param_volumeDouble') && (
+            <div className="flex items-center gap-1.5">
+              <Switch
+                checked={hasVolumeDouble}
+                onChange={setHasVolumeDouble}
+                size="small"
+              />
+              <span className="text-slate-400">倍量</span>
+            </div>
+          )}
 
-          <div className="flex items-center gap-1.5">
-            <Switch
-              checked={hasShrinkingPullback}
-              onChange={setHasShrinkingPullback}
-              size="small"
-            />
-            <span className="text-slate-400">缩量回踩</span>
-          </div>
+          {p('param_shrinkingPullback') && (
+            <div className="flex items-center gap-1.5">
+              <Switch
+                checked={hasShrinkingPullback}
+                onChange={setHasShrinkingPullback}
+                size="small"
+              />
+              <span className="text-slate-400">缩量回踩</span>
+            </div>
+          )}
 
-          <div className="flex items-center gap-1.5">
-            <Switch
-              checked={hasConsecutiveShrink}
-              onChange={setHasConsecutiveShrink}
-              size="small"
-            />
-            <span className="text-slate-400">连续缩量</span>
-          </div>
+          {p('param_consecutiveShrink') && (
+            <div className="flex items-center gap-1.5">
+              <Switch
+                checked={hasConsecutiveShrink}
+                onChange={setHasConsecutiveShrink}
+                size="small"
+              />
+              <span className="text-slate-400">连续缩量</span>
+            </div>
+          )}
 
-          <div className="flex items-center gap-1.5">
-            <Switch
-              checked={whiteBelowTwenty}
-              onChange={setWhiteBelowTwenty}
-              size="small"
-            />
-            <span className="text-slate-400">白线下20</span>
-          </div>
+          {p('param_whiteBelowTwenty') && (
+            <div className="flex items-center gap-1.5">
+              <Switch
+                checked={whiteBelowTwenty}
+                onChange={setWhiteBelowTwenty}
+                size="small"
+              />
+              <span className="text-slate-400">白线下20</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -254,11 +286,11 @@ export default function SwingTradeView({
           )}
 
           <div className="hidden md:block">
-            <ResultTable data={displayResults} hotData={hotData} subTab={subTab} />
+            <ResultTable data={displayResults} hotData={hotData} subTab={subTab} showJ={showJ} />
           </div>
           <div className="md:hidden flex flex-col gap-3">
             {displayResults.map(item => (
-              <ResultCard key={item.code} item={item} hotData={hotData} subTab={subTab} />
+              <ResultCard key={item.code} item={item} hotData={hotData} subTab={subTab} showJ={showJ} />
             ))}
           </div>
         </div>

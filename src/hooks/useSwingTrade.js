@@ -2,6 +2,8 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { fetchResults } from '../lib/api';
 import { getLastTradingDate } from '../lib/date';
 import { trackEvent } from '../lib/track';
+import { useAuth } from '../contexts/AuthContext';
+import { can } from '../lib/permissions';
 
 // 每个子策略的固定策略组合
 const PRESETS = {
@@ -16,6 +18,9 @@ const PRESETS = {
 };
 
 export default function useSwingTrade() {
+  const { role } = useAuth();
+  const showJ = can(role, 'param_jThreshold');
+
   const [subTab, setSubTab] = useState('brickReversal');
   const [line, setLine] = useState('short');
   const [date, setDate] = useState(getLastTradingDate);
@@ -23,7 +28,7 @@ export default function useSwingTrade() {
 
   // 反转筛选参数
   const [maxGain, setMaxGain] = useState(null);      // K线涨幅上限 %，null=不限
-  const [maxJ, setMaxJ] = useState(null);             // J值上限，null=不限
+  const [maxJ, setMaxJ] = useState(null);             // J值上限，null=不限（user角色由 effectiveMaxJ 强制）
   const [arrangement, setArrangement] = useState('any'); // 'any' | 'bull' | 'bear'
   const [nearLine, setNearLine] = useState(false);    // 触碰趋势线
   const [redGtGreen, setRedGtGreen] = useState(false); // 红砖 > 绿砖
@@ -82,15 +87,18 @@ export default function useSwingTrade() {
     if (preset) query(preset, line, date, excludeBoards);
   }, [subTab, line, date, excludeBoards, query]);
 
-  // 客户端筛选（仅砖型反转模式）
+  // 客户端筛选（仅大力反转模式）
   const results = useMemo(() => {
     if (subTab !== 'brickReversal') return rawResults;
+
+    // user 无 param_jThreshold 权限时强制 j<13
+    const effectiveMaxJ = showJ ? maxJ : 13;
 
     return rawResults.filter(r => {
       // K线涨幅上限
       if (maxGain != null && Math.abs(r.change) > maxGain) return false;
       // J值上限（与动态J值互斥）
-      if (!dynamicJ && maxJ != null && r.j >= maxJ) return false;
+      if (!dynamicJ && effectiveMaxJ != null && r.j >= effectiveMaxJ) return false;
       // 多头/空头排列
       if (arrangement === 'bull' && r.shortTrend <= r.bullBear) return false;
       if (arrangement === 'bear' && r.shortTrend > r.bullBear) return false;
@@ -119,14 +127,14 @@ export default function useSwingTrade() {
       if (whiteBelowTwenty && !(r.fl3 != null && r.fl3 <= 20 && r.fl31 != null && r.fl31 >= 70)) return false;
       return true;
     });
-  }, [rawResults, subTab, maxGain, maxJ, arrangement, nearLine, redGtGreen, upperLeBody, weeklyBull, weeklyLowJ, dynamicJ, closeAboveShort, hasVolumeDouble, hasShrinkingPullback, hasConsecutiveShrink, whiteBelowTwenty]);
+  }, [rawResults, subTab, showJ, maxGain, maxJ, arrangement, nearLine, redGtGreen, upperLeBody, weeklyBull, weeklyLowJ, dynamicJ, closeAboveShort, hasVolumeDouble, hasShrinkingPullback, hasConsecutiveShrink, whiteBelowTwenty]);
 
   return {
     subTab, setSubTab,
     line, setLine,
     date, setDate,
     excludeBoards, setExcludeBoards,
-    // 砖型反转筛选
+    // 大力反转筛选
     maxGain, setMaxGain,
     maxJ, setMaxJ,
     arrangement, setArrangement,

@@ -42,7 +42,7 @@ export default function BacktestView({
     }
   };
 
-  // 砖型反转客户端二次筛选
+  // 大力反转客户端二次筛选
   const filteredResults = useMemo(() => {
     if (params.screenMode !== 'brickReversal') return results;
 
@@ -102,7 +102,7 @@ export default function BacktestView({
 
   const filename = `回测-${meta?.scanDate || date || new Date().toISOString().slice(0, 10)}`;
 
-  // 砖型反转/连板传 subTab 给 ResultTable 做列切换
+  // 大力反转/连板传 subTab 给 ResultTable 做列切换
   const subTab = params.screenMode !== 'band' ? params.screenMode : undefined;
 
   return (

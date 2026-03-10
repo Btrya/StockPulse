@@ -19,7 +19,7 @@ function colorCount(n) {
   return 'blue';
 }
 
-export default function ResultCard({ item, hotData, subTab }) {
+export default function ResultCard({ item, hotData, subTab, showJ = true }) {
   const hotSets = useMemo(() => buildHotSets(hotData), [hotData]);
   const reasons = hotSets ? getHotReasons(item, hotSets) : [];
   const isHot = reasons.length > 0;
@@ -47,7 +47,7 @@ export default function ResultCard({ item, hotData, subTab }) {
           )}
           {isLimitUp
             ? <Tag color={colorCount(item.consecutiveCount)} className="num m-0">{item.consecutiveCount} 板</Tag>
-            : <Tag color={colorJ(item.j)} className="num m-0">J {item.j}</Tag>
+            : showJ && <Tag color={colorJ(item.j)} className="num m-0">J {item.j}</Tag>
           }
         </div>
       </div>

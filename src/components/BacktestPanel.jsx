@@ -10,7 +10,7 @@ const KLT_OPTIONS = [
 
 const SCREEN_MODE_OPTIONS = [
   { label: '波段', value: 'band' },
-  { label: '砖型反转', value: 'brickReversal' },
+  { label: '大力反转', value: 'brickReversal' },
   { label: '连板', value: 'consecutiveLimitUp' },
 ];
 
@@ -121,7 +121,7 @@ export default function BacktestPanel({
           )}
         </div>
 
-        {/* 砖型反转二次筛选参数面板 */}
+        {/* 大力反转二次筛选参数面板 */}
         {hasResults && isBrick && (
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-700 pt-4 text-xs">
             <div className="flex items-center gap-1.5">
@@ -194,7 +194,7 @@ export default function BacktestPanel({
           </div>
         )}
 
-        {/* 入场条件（波段 + 砖型反转模式下显示） */}
+        {/* 入场条件（波段 + 大力反转模式下显示） */}
         {hasResults && (isBand || isBrick) && (
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-700 pt-4 text-xs">
             <span className="text-slate-400 font-medium">入场条件</span>
