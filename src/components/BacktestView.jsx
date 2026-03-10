@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Spin, Empty, Alert, Collapse, message } from 'antd';
+import { useAuth } from '../contexts/AuthContext';
+import { can } from '../lib/permissions';
 import BacktestPanel from './BacktestPanel';
 import ResultTable from './ResultTable';
 import ResultCard from './ResultCard';
@@ -27,6 +29,9 @@ export default function BacktestView({
     hasConsecutiveShrink: params.hasConsecutiveShrink,
   }), [params.closeAboveShort, params.hasVolumeDouble, params.hasShrinkingPullback, params.hasConsecutiveShrink]);
 
+  const { role } = useAuth();
+  const showJ = can(role, 'param_jThreshold');
+
   const pa = usePostAnalysis(date, params.klt, paFilters);
 
   useEffect(() => {
@@ -46,9 +51,12 @@ export default function BacktestView({
   const filteredResults = useMemo(() => {
     if (params.screenMode !== 'brickReversal') return results;
 
+    // user 无 param_jThreshold 权限时强制 j<13
+    const effectiveMaxJ = showJ ? params.maxJ : 13;
+
     return results.filter(r => {
       if (params.maxGain != null && Math.abs(r.change) > params.maxGain) return false;
-      if (!params.dynamicJ && params.maxJ != null && r.j >= params.maxJ) return false;
+      if (!params.dynamicJ && effectiveMaxJ != null && r.j >= effectiveMaxJ) return false;
       if (params.arrangement === 'bull' && r.shortTrend <= r.bullBear) return false;
       if (params.arrangement === 'bear' && r.shortTrend > r.bullBear) return false;
       if (params.nearLine) {
@@ -150,12 +158,12 @@ export default function BacktestView({
           )}
 
           <div className="hidden md:block">
-            <ResultTable data={displayResults} hotData={hotData} subTab={subTab} jMode={params.dynamicJ ? 'dynamic' : undefined} />
+            <ResultTable data={displayResults} hotData={hotData} subTab={subTab} jMode={params.dynamicJ ? 'dynamic' : undefined} showJ={showJ} />
           </div>
 
           <div className="md:hidden flex flex-col gap-3">
             {displayResults.map(item => (
-              <ResultCard key={item.code} item={item} hotData={hotData} subTab={subTab} />
+              <ResultCard key={item.code} item={item} hotData={hotData} subTab={subTab} showJ={showJ} />
             ))}
           </div>
 

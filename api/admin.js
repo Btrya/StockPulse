@@ -54,13 +54,17 @@ export default async function handler(req, res) {
     return res.json({ ok: true, email: normalized, role: newRole });
   }
 
-  // DELETE /api/admin — 删除用户 { email }
+  // DELETE /api/admin — 删除用户 { email } 或清空统计 { email, action:'resetStats' }
   if (req.method === 'DELETE') {
-    const { email } = req.body || {};
+    const { email, action } = req.body || {};
     if (!email) {
       return res.status(400).json({ error: '缺少 email 参数' });
     }
     const normalized = email.trim().toLowerCase();
+    if (action === 'resetStats') {
+      await redis.del(`stats:${normalized}`);
+      return res.json({ ok: true, email: normalized });
+    }
     await redis.hdel('users', normalized);
     return res.json({ ok: true, email: normalized });
   }

@@ -131,6 +131,14 @@ export function deleteAdminUser(email) {
   });
 }
 
+export function resetAdminStats(email) {
+  return request('/admin', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, action: 'resetStats' }),
+  });
+}
+
 export function fetchHotData() {
   return request('/hot');
 }

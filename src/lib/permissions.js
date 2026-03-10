@@ -35,6 +35,7 @@ export const PERMISSIONS = {
   // ── 管理操作 ──────────────────────────────────────────
   action_triggerScan:       'admin',   // 手动触发数据扫描
   action_buildConcepts:     'admin',   // 构建概念
+  action_skipAntiDebug:     'admin', // 跳过反调试（admin 及以上免疫）
 };
 
 const ROLE_ORDER = ['guest', 'user', 'premium', 'admin'];

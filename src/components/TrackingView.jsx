@@ -5,8 +5,13 @@ import TrackingTable from './TrackingTable';
 import TrackingCard from './TrackingCard';
 import ExportBar from './ExportBar';
 import { buildHotSets, getHotReasons } from '../hooks/useHotData';
+import { useAuth } from '../contexts/AuthContext';
+import { can } from '../lib/permissions';
 
 export default function TrackingView({ params, setParams, date, setDate, results, meta, loading, refresh, sharedIndustries, sharedConcepts, hotData }) {
+  const { role } = useAuth();
+  const showJ = can(role, 'param_jThreshold');
+
   // 追踪结果有行业/概念就用，否则 fallback 到 screener 共享的列表
   const panelIndustries = meta?.industries?.length ? meta.industries : (sharedIndustries || []);
   const panelConcepts = meta?.concepts?.length ? meta.concepts : (sharedConcepts || []);
@@ -69,7 +74,7 @@ export default function TrackingView({ params, setParams, date, setDate, results
           )}
 
           <div className="hidden md:block">
-            <TrackingTable data={displayResults} hotData={hotData} />
+            <TrackingTable data={displayResults} hotData={hotData} showJ={showJ} />
           </div>
 
           <div className="md:hidden flex flex-col gap-3">

@@ -2,6 +2,8 @@ import { Select, InputNumber, Radio, Button, Space, Card, Checkbox, DatePicker, 
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import { buildHotOptions } from '../hooks/useHotData';
 import { getLastTradingDate } from '../lib/date';
+import { useAuth } from '../contexts/AuthContext';
+import { can } from '../lib/permissions';
 import dayjs from 'dayjs';
 
 const KLT_OPTIONS = [
@@ -23,6 +25,8 @@ const MIN_DAYS_OPTIONS = [
 ];
 
 export default function TrackingPanel({ params, setParams, date, setDate, industries, concepts, onSearch, loading, hotData }) {
+  const { role } = useAuth();
+  const showJ = can(role, 'param_jThreshold');
   const update = (key, val) => setParams(prev => ({ ...prev, [key]: val }));
 
   const industryOptions = buildHotOptions(industries, hotData?.hotIndustries);
@@ -108,7 +112,7 @@ export default function TrackingPanel({ params, setParams, date, setDate, indust
             />
           </div>
 
-          {!params.dynamicJ && (
+          {showJ && !params.dynamicJ && (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-slate-400">J 值阈值</span>
               <InputNumber
@@ -152,13 +156,15 @@ export default function TrackingPanel({ params, setParams, date, setDate, indust
             </div>
           )}
 
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-slate-400">动态J值</span>
-            <Switch
-              checked={params.dynamicJ}
-              onChange={v => update('dynamicJ', v)}
-            />
-          </div>
+          {showJ && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">动态J值</span>
+              <Switch
+                checked={params.dynamicJ}
+                onChange={v => update('dynamicJ', v)}
+              />
+            </div>
+          )}
 
           {params.klt === 'weekly' && (
             <div className="flex flex-col gap-1">

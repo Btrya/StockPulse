@@ -18,7 +18,7 @@ export default async function handler(req, res) {
 
   // ── GET：读取回测结果 ──
   if (req.method === 'GET') {
-    return handleGetResults(req, res);
+    return handleGetResults(req, res, session);
   }
 
   // ── POST：触发回测扫描 ──
@@ -31,15 +31,16 @@ export default async function handler(req, res) {
 }
 
 // ── GET handler（原 backtest-results.js）──
-async function handleGetResults(req, res) {
+async function handleGetResults(req, res, session) {
   try {
     const rawDate = req.query.date;
     if (!rawDate) {
       return res.status(400).json({ error: '缺少 date 参数' });
     }
 
-    const j = Number(req.query.j ?? DEFAULT_J);
-    const tolerance = Number(req.query.tolerance ?? DEFAULT_TOLERANCE);
+    const canJ = can(session.role, 'param_jThreshold');
+    const j = canJ ? Number(req.query.j ?? DEFAULT_J) : 13;
+    const tolerance = canJ ? Number(req.query.tolerance ?? DEFAULT_TOLERANCE) : DEFAULT_TOLERANCE;
     const klt = req.query.klt || DEFAULT_KLT;
     const date = klt === 'weekly' ? snapToFriday(rawDate) : rawDate;
     const sort = req.query.sort || 'j';
@@ -47,7 +48,7 @@ async function handleGetResults(req, res) {
     const industries = req.query.industries ? req.query.industries.split(',').filter(Boolean) : [];
     const excludeBoards = req.query.excludeBoards ? req.query.excludeBoards.split(',').filter(Boolean) : [];
     const concepts = req.query.concepts ? req.query.concepts.split(',').filter(Boolean) : [];
-    const dynamicJ = req.query.dynamicJ === '1';
+    const dynamicJ = canJ && req.query.dynamicJ === '1';
     const strategies = req.query.strategies ? req.query.strategies.split(',').filter(Boolean) : [];
     const combinator = req.query.combinator || undefined;
     const line = req.query.line || undefined;

@@ -41,7 +41,7 @@ function AppInner() {
 
   // 非 premium 用户启用反调试
   useEffect(() => {
-    if (!p('tab_backtest')) {
+    if (!p('action_skipAntiDebug')) {
       startAntiDebug();
       return () => stopAntiDebug();
     } else {

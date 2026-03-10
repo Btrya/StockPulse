@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Tabs, Table, Tag, Button, Select, Popconfirm, Input, Space, message, Spin } from 'antd';
 import { ReloadOutlined, UserAddOutlined, DeleteOutlined } from '@ant-design/icons';
-import { fetchAdminUsers, fetchAdminStats, saveAdminUser, deleteAdminUser } from '../lib/api';
+import { fetchAdminUsers, fetchAdminStats, saveAdminUser, deleteAdminUser, resetAdminStats } from '../lib/api';
 
 const ROLE_OPTIONS = [
   { value: 'user', label: 'user' },
@@ -168,6 +168,16 @@ function StatsTab() {
 
   useEffect(() => { load(); }, [load]);
 
+  const handleReset = async (email) => {
+    try {
+      await resetAdminStats(email);
+      message.success(`已清空 ${email} 的统计`);
+      load();
+    } catch (err) {
+      message.error(err.message);
+    }
+  };
+
   const eventKeys = ['scan', 'tracking', 'backtest', 'swing', 'export', 'post_analysis', 'total'];
 
   const columns = [
@@ -201,6 +211,15 @@ function StatsTab() {
       render: v => v
         ? <span className="text-xs text-slate-500">{new Date(v).toLocaleString('zh-CN', { hour12: false })}</span>
         : '-',
+    },
+    {
+      title: '',
+      width: 60,
+      render: (_, record) => (
+        <Popconfirm title={`清空 ${record.email} 的统计数据？`} onConfirm={() => handleReset(record.email)} okText="清空" cancelText="取消">
+          <Button size="small" type="text" danger icon={<DeleteOutlined />} />
+        </Popconfirm>
+      ),
     },
   ];
 

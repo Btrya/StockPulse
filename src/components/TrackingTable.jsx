@@ -131,11 +131,19 @@ function toHotTarget(record) {
   };
 }
 
-export default function TrackingTable({ data, hotData }) {
+const J_COLS = new Set(['jTrend', 'latest,j']);
+
+export default function TrackingTable({ data, hotData, showJ = true }) {
   const hotSets = useMemo(() => buildHotSets(hotData), [hotData]);
 
   const industries = [...new Set(data.map(r => r.industry).filter(Boolean))];
-  const cols = columns.map(c => {
+
+  const visibleColumns = showJ ? columns : columns.filter(c => {
+    const key = Array.isArray(c.dataIndex) ? c.dataIndex.join(',') : c.dataIndex;
+    return !J_COLS.has(key);
+  });
+
+  const cols = visibleColumns.map(c => {
     if (c.dataIndex === 'industry') return { ...c, filters: industries.map(i => ({ text: i, value: i })) };
     if (c.dataIndex === 'name' && hotSets) {
       return {

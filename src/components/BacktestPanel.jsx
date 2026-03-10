@@ -2,6 +2,8 @@ import { DatePicker, Select, InputNumber, Input, Radio, Button, Space, Card, Che
 import { ExperimentOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { buildHotOptions } from '../hooks/useHotData';
+import { useAuth } from '../contexts/AuthContext';
+import { can } from '../lib/permissions';
 
 const KLT_OPTIONS = [
   { label: '日线', value: 'daily' },
@@ -29,6 +31,8 @@ export default function BacktestPanel({
   stockFilter, onStockFilterChange,
   hotData, queue,
 }) {
+  const { role } = useAuth();
+  const showJ = can(role, 'param_jThreshold');
   const update = (key, val) => setParams(prev => ({ ...prev, [key]: val }));
 
   const resultIndustryOpts = buildHotOptions(resultIndustries, hotData?.hotIndustries);
@@ -137,7 +141,7 @@ export default function BacktestPanel({
               <span className="text-slate-400">%</span>
             </div>
 
-            {!params.dynamicJ && (
+            {showJ && !params.dynamicJ && (
               <div className="flex items-center gap-1.5">
                 <span className="text-slate-400">J &lt;</span>
                 <InputNumber
@@ -187,10 +191,12 @@ export default function BacktestPanel({
               <Switch checked={params.weeklyLowJ} onChange={v => update('weeklyLowJ', v)} size="small" />
               <span className="text-slate-400">周线低位</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <Switch checked={params.dynamicJ} onChange={v => update('dynamicJ', v)} size="small" />
-              <span className="text-slate-400">动态J值</span>
-            </div>
+            {showJ && (
+              <div className="flex items-center gap-1.5">
+                <Switch checked={params.dynamicJ} onChange={v => update('dynamicJ', v)} size="small" />
+                <span className="text-slate-400">动态J值</span>
+              </div>
+            )}
           </div>
         )}
 
@@ -272,8 +278,8 @@ export default function BacktestPanel({
                 onChange={v => update('excludeBoards', v)}
               />
             </div>
-            {/* 波段模式下显示 J 值和动态 J */}
-            {isBand && !params.dynamicJ && (
+            {/* 波段模式下显示 J 值和动态 J（仅 premium） */}
+            {showJ && isBand && !params.dynamicJ && (
               <div className="flex flex-col gap-1">
                 <span className="text-xs text-slate-400">J 值阈值</span>
                 <InputNumber
@@ -284,7 +290,7 @@ export default function BacktestPanel({
                 />
               </div>
             )}
-            {isBand && (
+            {showJ && isBand && (
               <div className="flex flex-col gap-1">
                 <span className="text-xs text-slate-400">动态J值</span>
                 <Switch
