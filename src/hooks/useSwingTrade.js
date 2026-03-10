@@ -5,17 +5,13 @@ import { trackEvent } from '../lib/track';
 import { useAuth } from '../contexts/AuthContext';
 import { can } from '../lib/permissions';
 
-// 每个子策略的固定策略组合
+// 每个子策略的固定策略组合（key 为 subTab 值，不要改）
 const PRESETS = {
-  brickReversal: {
-    strategies: ['brickReversal'],
-    combinator: 'AND',
-  },
-  consecutiveLimitUp: {
-    strategies: ['consecutiveLimitUp'],
-    combinator: 'AND',
-  },
+  br: { strategies: ['brickReversal'], combinator: 'AND' },
+  cl: { strategies: ['consecutiveLimitUp'], combinator: 'AND' },
 };
+// subTab 实际值 → preset key 映射
+const TAB_KEY = { brickReversal: 'br', consecutiveLimitUp: 'cl' };
 
 export default function useSwingTrade() {
   const { role } = useAuth();
@@ -74,7 +70,7 @@ export default function useSwingTrade() {
   }, []);
 
   const refresh = useCallback(() => {
-    const preset = PRESETS[subTab];
+    const preset = PRESETS[TAB_KEY[subTab]];
     if (preset) query(preset, line, date, excludeBoards);
   }, [subTab, line, date, excludeBoards, query]);
 
@@ -83,7 +79,7 @@ export default function useSwingTrade() {
     if (!initDone.current) {
       initDone.current = true;
     }
-    const preset = PRESETS[subTab];
+    const preset = PRESETS[TAB_KEY[subTab]];
     if (preset) query(preset, line, date, excludeBoards);
   }, [subTab, line, date, excludeBoards, query]);
 

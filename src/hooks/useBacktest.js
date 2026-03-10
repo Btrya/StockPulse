@@ -18,15 +18,13 @@ const DEFAULTS = {
 };
 
 // 每种 screenMode 对应的后端 strategies/combinator
+const _PM = {
+  br: { strategies: ['brickReversal'], combinator: 'AND', line: 'short' },
+  cl: { strategies: ['consecutiveLimitUp'], combinator: 'AND' },
+};
+const _MK = { brickReversal: 'br', consecutiveLimitUp: 'cl' };
 function getPreset(params) {
-  switch (params.screenMode) {
-    case 'brickReversal':
-      return { strategies: ['brickReversal'], combinator: 'AND', line: 'short' };
-    case 'consecutiveLimitUp':
-      return { strategies: ['consecutiveLimitUp'], combinator: 'AND' };
-    default: // band
-      return {};
-  }
+  return _PM[_MK[params.screenMode]] || {};
 }
 
 export default function useBacktest() {
