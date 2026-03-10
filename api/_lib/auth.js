@@ -11,31 +11,31 @@ export function hasRole(userRole, required) {
 }
 
 /**
- * 从请求中获取当前用户 role。
- * 无 token 或 token 无效时返回 'guest'。
+ * 从请求中获取当前用户 session。
+ * 无 token 或无效时返回 { role: 'guest', email: null }。
  */
 export async function getRole(req) {
   const token = req.headers['x-auth-token'];
-  if (!token) return 'guest';
+  if (!token) return { role: 'guest', email: null };
   try {
     const session = await redis.get(`session:${token}`);
-    if (!session) return 'guest';
-    const { role } = typeof session === 'object' ? session : JSON.parse(session);
-    return role || 'guest';
+    if (!session) return { role: 'guest', email: null };
+    const { role, email } = typeof session === 'object' ? session : JSON.parse(session);
+    return { role: role || 'guest', email: email || null };
   } catch {
-    return 'guest';
+    return { role: 'guest', email: null };
   }
 }
 
 /**
- * 要求至少 required 权限，否则返回 403 并中止请求。
- * 返回 role 字符串（通过了校验），或 false（已发送响应）。
+ * 要求至少 required 权限，否则返回 403。
+ * 通过则返回 { role, email }，失败返回 false。
  */
 export async function requireRole(req, res, required = 'user') {
-  const role = await getRole(req);
-  if (!hasRole(role, required)) {
+  const session = await getRole(req);
+  if (!hasRole(session.role, required)) {
     res.status(403).json({ error: '权限不足，请登录高级账号' });
     return false;
   }
-  return role;
+  return session;
 }

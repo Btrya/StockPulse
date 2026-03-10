@@ -2,8 +2,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Tag, Button, Tooltip, Space, message } from 'antd';
 import { SyncOutlined, CheckCircleOutlined, ThunderboltOutlined, StopOutlined } from '@ant-design/icons';
 import { fetchStatus, triggerScan } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
+import { can } from '../lib/permissions';
 
 export default function StatusBar({ klt }) {
+  const { role } = useAuth();
+  const canScan = can(role, 'action_triggerScan');
   const [status, setStatus] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [scanInfo, setScanInfo] = useState(null);
@@ -109,9 +113,11 @@ export default function StatusBar({ klt }) {
         <Tag icon={<SyncOutlined spin />} color="processing">
           扫描中 {scanKlt === 'weekly' ? '周线' : '日线'} {idx}/{total} ({pct}%)
         </Tag>
-        <Tooltip title="取消扫描">
-          <Button size="small" type="text" icon={<StopOutlined />} onClick={handleCancel} style={{ color: '#f87171' }} />
-        </Tooltip>
+        {canScan && (
+          <Tooltip title="取消扫描">
+            <Button size="small" type="text" icon={<StopOutlined />} onClick={handleCancel} style={{ color: '#f87171' }} />
+          </Tooltip>
+        )}
         {btTag}
       </Space>
     );
@@ -129,13 +135,13 @@ export default function StatusBar({ klt }) {
         <Tag color="warning">暂无数据</Tag>
       )}
       {btTag}
-      <Tooltip title={`手动扫描${klt === 'weekly' ? '周线' : '日线'}（仅当前周期）`}>
+      <Tooltip title={canScan ? `手动扫描${klt === 'weekly' ? '周线' : '日线'}（仅当前周期）` : '请联系管理员更新数据'}>
         <Button
           size="small"
           type="text"
           icon={<ThunderboltOutlined />}
-          onClick={handleScan}
-          style={{ color: '#facc15' }}
+          onClick={canScan ? handleScan : undefined}
+          style={{ color: canScan ? '#facc15' : '#475569', cursor: canScan ? 'pointer' : 'default' }}
         />
       </Tooltip>
     </div>

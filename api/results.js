@@ -3,6 +3,7 @@ import { KEY, TTL, DEFAULT_TOLERANCE, DEFAULT_KLT, WIDE_J_THRESHOLD, MARKET_BOAR
 import { filterResults } from './_lib/screener.js';
 import { getRole } from './_lib/auth.js';
 import { can } from './_lib/permissions.js';
+import { recordEvent } from './_lib/stats.js';
 
 // 获取行业列表（优先 Redis 缓存，fallback Tushare）
 async function getIndustries() {
@@ -30,8 +31,9 @@ async function getIndustries() {
 
 export default async function handler(req, res) {
   try {
-    const role = await getRole(req);
+    const { role, email } = await getRole(req);
     const p = (key) => can(role, key);
+    recordEvent(email, 'scan');
 
     // 无权限时强制使用默认参数，有权限时使用前端传入值
     const j = p('param_jThreshold') ? Number(req.query.j ?? WIDE_J_THRESHOLD) : WIDE_J_THRESHOLD;

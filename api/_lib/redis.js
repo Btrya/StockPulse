@@ -54,6 +54,10 @@ export async function hdel(key, field) {
   return cmd('HDEL', key, field);
 }
 
+export async function hincrby(key, field, increment = 1) {
+  return cmd('HINCRBY', key, field, String(increment));
+}
+
 export async function hgetall(key) {
   const raw = await cmd('HGETALL', key);
   // Upstash 返回 [k1, v1, k2, v2, ...] 或 null

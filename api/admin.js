@@ -1,16 +1,42 @@
 import * as redis from './_lib/redis.js';
-import { requireRole } from './_lib/auth.js';
+import { requireRole, getRole } from './_lib/auth.js';
+import { recordEvent } from './_lib/stats.js';
 
 const VALID_ROLES = ['user', 'premium', 'admin'];
+const TRACK_EVENTS = ['scan', 'backtest', 'tracking', 'swing', 'export', 'post_analysis'];
 
 export default async function handler(req, res) {
-  const role = await requireRole(req, res, 'admin');
-  if (!role) return;
+  // ── POST /api/admin { action:'event', event:'export' } ——
+  // 普通用户也可以上报前端事件，不需要 admin 权限
+  if (req.method === 'POST' && req.body?.action === 'event') {
+    const { role, email } = await getRole(req);
+    if (!email) return res.status(401).json({ error: '未登录' });
+    const { event } = req.body;
+    if (!TRACK_EVENTS.includes(event)) return res.status(400).json({ error: '未知事件' });
+    await recordEvent(email, event);
+    return res.json({ ok: true });
+  }
+
+  // 以下接口需要 admin 权限
+  const session = await requireRole(req, res, 'admin');
+  if (!session) return;
 
   // GET /api/admin — 列出所有用户
+  // GET /api/admin?view=stats — 查看操作统计
   if (req.method === 'GET') {
-    const map = await redis.hgetall('users');
-    const users = Object.entries(map).map(([email, role]) => ({ email, role }));
+    const usersMap = await redis.hgetall('users');
+    const users = Object.entries(usersMap).map(([email, role]) => ({ email, role }));
+
+    if (req.query.view === 'stats') {
+      const statsEntries = await Promise.all(
+        users.map(async ({ email, role }) => {
+          const s = await redis.hgetall(`stats:${email}`);
+          return { email, role, ...s };
+        })
+      );
+      return res.json({ stats: statsEntries });
+    }
+
     return res.json({ users });
   }
 

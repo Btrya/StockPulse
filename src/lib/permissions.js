@@ -26,6 +26,7 @@ export const PERMISSIONS = {
   param_onlyHot:            'user',     // 只看热门
 
   // ── 管理操作 ──────────────────────────────────────────
+  action_triggerScan:       'admin',   // 手动触发数据扫描
   action_buildConcepts:     'admin',   // 构建概念
 };
 

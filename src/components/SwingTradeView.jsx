@@ -36,7 +36,7 @@ export default function SwingTradeView({
   hotData,
 }) {
   const subItems = [
-    { key: 'brickReversal', label: '砖型反转' },
+    { key: 'brickReversal', label: '大力反转' },
     { key: 'consecutiveLimitUp', label: '连板' },
   ];
 

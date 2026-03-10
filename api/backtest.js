@@ -5,13 +5,15 @@ import { KEY, TTL, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS, TUS
 import { filterResults } from './_lib/screener.js';
 import { bulkScan } from './_lib/bulk-scan.js';
 import { requireRole } from './_lib/auth.js';
+import { recordEvent } from './_lib/stats.js';
 
 const SCREEN_TTL = { daily: TTL.SCREEN_RESULT_DAILY, weekly: TTL.SCREEN_RESULT_WEEKLY };
 const TIMEOUT_MS = 50000;
 
 export default async function handler(req, res) {
-  const role = await requireRole(req, res, 'premium');
-  if (!role) return;
+  const session = await requireRole(req, res, 'premium');
+  if (!session) return;
+  const { email } = session;
 
   // ── GET：读取回测结果 ──
   if (req.method === 'GET') {
@@ -20,6 +22,7 @@ export default async function handler(req, res) {
 
   // ── POST：触发回测扫描 ──
   if (req.method === 'POST') {
+    recordEvent(email, 'backtest');
     return handlePostScan(req, res);
   }
 

@@ -3,12 +3,14 @@ import { KEY, TTL, TUSHARE_DELAY_MS, hashCodes } from './_lib/constants.js';
 import { getDailyRange, getWeeklyRange } from './_lib/tushare.js';
 import { shortTrendLine, bullBearLine } from './_lib/indicators.js';
 import { requireRole } from './_lib/auth.js';
+import { recordEvent } from './_lib/stats.js';
 
 const TIMEOUT_MS = 50000;
 
 export default async function handler(req, res) {
-  const role = await requireRole(req, res, 'premium');
-  if (!role) return;
+  const session = await requireRole(req, res, 'premium');
+  if (!session) return;
+  const { email } = session;
 
   // ── GET：读取复盘数据（原 post-analysis-data.js）──
   if (req.method === 'GET') {
@@ -17,6 +19,7 @@ export default async function handler(req, res) {
 
   // ── POST：触发复盘计算 ──
   if (req.method === 'POST') {
+    recordEvent(email, 'post_analysis');
     return handlePostTrigger(req, res);
   }
 

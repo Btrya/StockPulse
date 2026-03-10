@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { fetchResults } from '../lib/api';
 import { getLastTradingDate } from '../lib/date';
+import { trackEvent } from '../lib/track';
 
 // 每个子策略的固定策略组合
 const PRESETS = {
@@ -20,7 +21,7 @@ export default function useSwingTrade() {
   const [date, setDate] = useState(getLastTradingDate);
   const [excludeBoards, setExcludeBoards] = useState([]);
 
-  // 砖型反转筛选参数
+  // 反转筛选参数
   const [maxGain, setMaxGain] = useState(null);      // K线涨幅上限 %，null=不限
   const [maxJ, setMaxJ] = useState(null);             // J值上限，null=不限
   const [arrangement, setArrangement] = useState('any'); // 'any' | 'bull' | 'bear'
@@ -44,6 +45,7 @@ export default function useSwingTrade() {
 
   const query = useCallback(async (preset, lineVal, dateVal, boards) => {
     setLoading(true);
+    trackEvent('swing');
     try {
       const res = await fetchResults({
         date: dateVal,

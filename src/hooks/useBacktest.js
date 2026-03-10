@@ -6,7 +6,7 @@ const DEFAULTS = {
   industries: [], excludeBoards: [], concepts: [],
   dynamicJ: false,
   screenMode: 'band',
-  // 砖型反转客户端筛选参数
+  // 反转客户端筛选参数
   maxGain: null, maxJ: null, arrangement: 'any',
   nearLine: false, redGtGreen: false, upperLeBody: false,
   weeklyBull: false, weeklyLowJ: false,

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Modal } from 'antd';
 import html2canvas from 'html2canvas';
+import { trackEvent } from '../lib/track';
 
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -18,12 +19,14 @@ export default function ExportBar({ data, filename }) {
   if (!data || data.length === 0) return null;
 
   const exportTxt = () => {
+    trackEvent('export');
     const codes = data.map(d => d.ts_code).filter(Boolean).join('\n');
     const blob = new Blob([codes], { type: 'text/plain' });
     downloadBlob(blob, `${filename}.txt`);
   };
 
   const downloadPng = async () => {
+    trackEvent('export');
     if (!previewRef.current) return;
     const canvas = await html2canvas(previewRef.current, {
       backgroundColor: '#0f172a',

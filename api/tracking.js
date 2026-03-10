@@ -2,11 +2,14 @@ import * as redis from './_lib/redis.js';
 import { KEY, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS, TRACKING_DAILY_WINDOW, TRACKING_WEEKLY_WINDOW, isWeekend, getCNDate, snapToFriday } from './_lib/constants.js';
 import { filterResults } from './_lib/screener.js';
 import { requireRole } from './_lib/auth.js';
+import { recordEvent } from './_lib/stats.js';
 
 export default async function handler(req, res) {
   try {
-    const role = await requireRole(req, res, 'premium');
-    if (!role) return; // 已发送 403
+    const session = await requireRole(req, res, 'premium');
+    if (!session) return;
+    const { role, email } = session;
+    recordEvent(email, 'tracking');
 
     const klt = req.query.klt || DEFAULT_KLT;
     const minDays = Number(req.query.minDays ?? 2);
