@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Tabs, Tooltip } from 'antd';
-import { FilterOutlined, LineChartOutlined, ExperimentOutlined, SearchOutlined, ThunderboltOutlined, LockOutlined } from '@ant-design/icons';
+import { FilterOutlined, LineChartOutlined, ExperimentOutlined, SearchOutlined, ThunderboltOutlined, LockOutlined, SettingOutlined } from '@ant-design/icons';
 import Layout from './components/Layout';
 import ParamPanel from './components/ParamPanel';
 import ResultList from './components/ResultList';
@@ -16,6 +16,7 @@ import useSwingTrade from './hooks/useSwingTrade';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { startAntiDebug, stopAntiDebug } from './lib/antiDebug';
 import { can } from './lib/permissions';
+import AdminView from './components/AdminView';
 import LoginGate from './components/LoginGate';
 
 function LockedTab({ label }) {
@@ -186,6 +187,11 @@ function AppInner() {
       label: <span><SearchOutlined /> 查询</span>,
       children: <StockSearch />,
     },
+    ...(role === 'admin' ? [{
+      key: 'admin',
+      label: <span><SettingOutlined /> 管理</span>,
+      children: <AdminView />,
+    }] : []),
   ];
 
   return (

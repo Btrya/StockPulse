@@ -107,6 +107,30 @@ export function searchStocks(q) {
   return request(`/stock-search?q=${encodeURIComponent(q)}`);
 }
 
+export function fetchAdminUsers() {
+  return request('/admin');
+}
+
+export function fetchAdminStats() {
+  return request('/admin?view=stats');
+}
+
+export function saveAdminUser(email, role) {
+  return request('/admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, role }),
+  });
+}
+
+export function deleteAdminUser(email) {
+  return request('/admin', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+}
+
 export function fetchHotData() {
   return request('/hot');
 }

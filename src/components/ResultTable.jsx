@@ -178,7 +178,7 @@ const brickCol = {
         <span style={{ color: '#4ade80' }}>{r.brickPrev2}</span>
         <span className="text-slate-500 mx-0.5">&rarr;</span>
         <span style={{ color: '#f87171' }}>{v}</span>
-        {isRedGtGreen && <span className="ml-1 text-amber-400" title="超大力！！！>&#9650;</span>}
+        {isRedGtGreen && <span className="ml-1 text-amber-400" title="超大力！！！▲"></span>}
       </span>
     );
   },
