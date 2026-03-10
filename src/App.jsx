@@ -15,6 +15,8 @@ import useHotData from './hooks/useHotData';
 import useSwingTrade from './hooks/useSwingTrade';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { startAntiDebug, stopAntiDebug } from './lib/antiDebug';
+import { can } from './lib/permissions';
+import LoginGate from './components/LoginGate';
 
 function LockedTab({ label }) {
   return (
@@ -33,22 +35,22 @@ function AppInner() {
   const swingTrade = useSwingTrade();
   const { hotData } = useHotData();
   const [activeTab, setActiveTab] = useState('screener');
-  const { hasRole } = useAuth();
-
-  const isPremium = hasRole('premium');
+  const { role } = useAuth();
+  const p = (key) => can(role, key);
 
   // 非 premium 用户启用反调试
   useEffect(() => {
-    if (!isPremium) {
+    if (!p('tab_backtest')) {
       startAntiDebug();
       return () => stopAntiDebug();
     } else {
       stopAntiDebug();
     }
-  }, [isPremium]);
+  }, [role]);
 
   const handleTabChange = (key) => {
-    if (!isPremium && ['tracking', 'backtest', 'swing'].includes(key)) return;
+    const tabPermMap = { tracking: 'tab_tracking', backtest: 'tab_backtest', swing: 'tab_swing' };
+    if (tabPermMap[key] && !p(tabPermMap[key])) return;
     setActiveTab(key);
     if (key === 'tracking') tracking.activate();
   };
@@ -80,11 +82,11 @@ function AppInner() {
     },
     {
       key: 'tracking',
-      label: isPremium
+      label: p('tab_tracking')
         ? <span><LineChartOutlined /> 追踪</span>
         : <LockedTab label="追踪" />,
-      disabled: !isPremium,
-      children: isPremium ? (
+      disabled: !p('tab_tracking'),
+      children: p('tab_tracking') ? (
         <TrackingView
           params={tracking.params}
           setParams={tracking.setParams}
@@ -102,11 +104,11 @@ function AppInner() {
     },
     {
       key: 'backtest',
-      label: isPremium
+      label: p('tab_backtest')
         ? <span><ExperimentOutlined /> 回测</span>
         : <LockedTab label="回测" />,
-      disabled: !isPremium,
-      children: isPremium ? (
+      disabled: !p('tab_backtest'),
+      children: p('tab_backtest') ? (
         <BacktestView
           params={backtest.params}
           setParams={backtest.setParams}
@@ -129,11 +131,11 @@ function AppInner() {
     },
     {
       key: 'swing',
-      label: isPremium
+      label: p('tab_swing')
         ? <span><ThunderboltOutlined /> 超短线</span>
         : <LockedTab label="超短线" />,
-      disabled: !isPremium,
-      children: isPremium ? (
+      disabled: !p('tab_swing'),
+      children: p('tab_swing') ? (
         <SwingTradeView
           subTab={swingTrade.subTab}
           setSubTab={swingTrade.setSubTab}
@@ -202,7 +204,9 @@ function AppInner() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppInner />
+      <LoginGate>
+        <AppInner />
+      </LoginGate>
     </AuthProvider>
   );
 }

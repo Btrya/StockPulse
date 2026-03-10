@@ -5,6 +5,7 @@ import { buildConcepts } from '../lib/api';
 import { buildHotOptions } from '../hooks/useHotData';
 import { getLastTradingDate } from '../lib/date';
 import { useAuth } from '../contexts/AuthContext';
+import { can } from '../lib/permissions';
 import dayjs from 'dayjs';
 
 const KLT_OPTIONS = [
@@ -21,9 +22,8 @@ const BOARD_OPTIONS = [
 export default function ParamPanel({ params, setParams, date, setDate, industries, concepts, onSearch, loading, hotData }) {
   const update = (key, val) => setParams(prev => ({ ...prev, [key]: val }));
   const [buildingConcepts, setBuildingConcepts] = useState(false);
-  const { hasRole } = useAuth();
-  const isPremium = hasRole('premium');
-  const isAdmin = hasRole('admin');
+  const { role } = useAuth();
+  const p = (key) => can(role, key); // 快捷判断当前用户是否有某权限
 
   const handleBuildConcepts = async () => {
     setBuildingConcepts(true);
@@ -121,7 +121,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             />
           </div>
 
-          {isPremium && (
+          {p('param_jMode') && (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-slate-400">J 值模式</span>
               <Radio.Group
@@ -138,7 +138,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </div>
           )}
 
-          {isPremium && (params.jMode || 'fixed') === 'fixed' && (
+          {p('param_jThreshold') && (params.jMode || 'fixed') === 'fixed' && (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-slate-400">J 值阈值</span>
               <InputNumber
@@ -150,7 +150,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </div>
           )}
 
-          {isPremium && (
+          {p('param_tolerance') && (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-slate-400">容差 %</span>
               <InputNumber
@@ -164,7 +164,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </div>
           )}
 
-          {isPremium && params.klt === 'daily' && (
+          {p('param_weeklyBull') && params.klt === 'daily' && (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-slate-400">周线多头</span>
               <Switch
@@ -174,7 +174,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </div>
           )}
 
-          {isPremium && params.klt === 'daily' && (
+          {p('param_weeklyLowJ') && params.klt === 'daily' && (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-slate-400">周线低位</span>
               <Switch
@@ -184,7 +184,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </div>
           )}
 
-          {isPremium && params.klt === 'weekly' && (
+          {p('param_dailyLowJ') && params.klt === 'weekly' && (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-slate-400">日线低位</span>
               <Switch
@@ -194,7 +194,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </div>
           )}
 
-          {isPremium && (
+          {p('param_closeAboveShort') && (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-slate-400">收盘&gt;短趋</span>
               <Switch
@@ -204,7 +204,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </div>
           )}
 
-          {isPremium && (
+          {p('param_volumeDouble') && (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-slate-400">倍量</span>
               <Switch
@@ -214,7 +214,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </div>
           )}
 
-          {isPremium && (
+          {p('param_shrinkingPullback') && (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-slate-400">缩量回踩</span>
               <Switch
@@ -224,7 +224,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </div>
           )}
 
-          {isPremium && (
+          {p('param_consecutiveShrink') && (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-slate-400">连续缩量</span>
               <Switch
@@ -234,7 +234,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </div>
           )}
 
-          {isPremium && (
+          {p('param_whiteBelowTwenty') && (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-slate-400">白线下20</span>
               <Switch
@@ -244,13 +244,15 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </div>
           )}
 
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-slate-400">只看热门</span>
-            <Switch
-              checked={params.onlyHot}
-              onChange={v => update('onlyHot', v)}
-            />
-          </div>
+          {p('param_onlyHot') && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">只看热门</span>
+              <Switch
+                checked={params.onlyHot}
+                onChange={v => update('onlyHot', v)}
+              />
+            </div>
+          )}
 
           <Space>
             <Button
@@ -267,7 +269,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             >
               重置
             </Button>
-            {isAdmin && !conceptOptions.length && (
+            {p('action_buildConcepts') && !conceptOptions.length && (
               <Button
                 icon={<TagsOutlined />}
                 onClick={handleBuildConcepts}

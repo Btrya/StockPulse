@@ -9,8 +9,6 @@
  *   node scripts/add-user.mjs friend@qq.com premium
  */
 
-import { config } from 'node:process';
-
 const [,, email, role] = process.argv;
 
 if (!email || !role) {

@@ -1,7 +1,8 @@
 import * as redis from './_lib/redis.js';
 import { KEY, TTL, DEFAULT_TOLERANCE, DEFAULT_KLT, WIDE_J_THRESHOLD, MARKET_BOARDS, getCNDate, isMarketClosed, snapToFriday } from './_lib/constants.js';
 import { filterResults } from './_lib/screener.js';
-import { getRole, hasRole } from './_lib/auth.js';
+import { getRole } from './_lib/auth.js';
+import { can } from './_lib/permissions.js';
 
 // 获取行业列表（优先 Redis 缓存，fallback Tushare）
 async function getIndustries() {
@@ -29,36 +30,30 @@ async function getIndustries() {
 
 export default async function handler(req, res) {
   try {
-    // ── 权限检查：敏感参数只对 premium+ 生效 ──
     const role = await getRole(req);
-    const isPremium = hasRole(role, 'premium');
+    const p = (key) => can(role, key);
 
-    // 非高级用户：强制使用默认策略参数，忽略前端传来的值
-    // premium：使用前端传入值；普通用户：固定 j=13（WIDE_J_THRESHOLD），tolerance=2
-    const j = isPremium ? Number(req.query.j ?? WIDE_J_THRESHOLD) : WIDE_J_THRESHOLD;
-    const tolerance = isPremium ? Number(req.query.tolerance ?? DEFAULT_TOLERANCE) : DEFAULT_TOLERANCE;
+    // 无权限时强制使用默认参数，有权限时使用前端传入值
+    const j = p('param_jThreshold') ? Number(req.query.j ?? WIDE_J_THRESHOLD) : WIDE_J_THRESHOLD;
+    const tolerance = p('param_tolerance') ? Number(req.query.tolerance ?? DEFAULT_TOLERANCE) : DEFAULT_TOLERANCE;
     const klt = req.query.klt || DEFAULT_KLT;
     const sort = req.query.sort || 'j';
     const order = req.query.order || 'asc';
-    // 行业过滤（逗号分隔）
     const industries = req.query.industries ? req.query.industries.split(',').filter(Boolean) : [];
-    // 排除板块（逗号分隔：gem,star,bse）
     const excludeBoards = req.query.excludeBoards ? req.query.excludeBoards.split(',').filter(Boolean) : [];
-    // 概念过滤（逗号分隔，OR 逻辑）
     const concepts = req.query.concepts ? req.query.concepts.split(',').filter(Boolean) : [];
-    // 策略组合（仅 premium）
-    const strategies = isPremium && req.query.strategies ? req.query.strategies.split(',').filter(Boolean) : undefined;
-    const combinator = isPremium ? (req.query.combinator || undefined) : undefined;
-    const line = isPremium ? (req.query.line || undefined) : undefined;
-    const weeklyBull = isPremium && req.query.weeklyBull === '1';
-    const weeklyLowJ = isPremium && req.query.weeklyLowJ === '1';
-    const dailyLowJ = isPremium && req.query.dailyLowJ === '1';
-    const closeAboveShort = isPremium && req.query.closeAboveShort === '1';
-    const hasVolumeDouble = isPremium && req.query.hasVolumeDouble === '1';
-    const hasShrinkingPullback = isPremium && req.query.hasShrinkingPullback === '1';
-    const hasConsecutiveShrink = isPremium && req.query.hasConsecutiveShrink === '1';
-    const whiteBelowTwenty = isPremium && req.query.whiteBelowTwenty === '1';
-    const dynamicJ = isPremium && req.query.dynamicJ === '1';
+    const strategies = p('param_jMode') && req.query.strategies ? req.query.strategies.split(',').filter(Boolean) : undefined;
+    const combinator = p('param_jMode') ? (req.query.combinator || undefined) : undefined;
+    const line = p('param_jMode') ? (req.query.line || undefined) : undefined;
+    const weeklyBull = p('param_weeklyBull') && req.query.weeklyBull === '1';
+    const weeklyLowJ = p('param_weeklyLowJ') && req.query.weeklyLowJ === '1';
+    const dailyLowJ = p('param_dailyLowJ') && req.query.dailyLowJ === '1';
+    const closeAboveShort = p('param_closeAboveShort') && req.query.closeAboveShort === '1';
+    const hasVolumeDouble = p('param_volumeDouble') && req.query.hasVolumeDouble === '1';
+    const hasShrinkingPullback = p('param_shrinkingPullback') && req.query.hasShrinkingPullback === '1';
+    const hasConsecutiveShrink = p('param_consecutiveShrink') && req.query.hasConsecutiveShrink === '1';
+    const whiteBelowTwenty = p('param_whiteBelowTwenty') && req.query.whiteBelowTwenty === '1';
+    const dynamicJ = p('param_jMode') && req.query.dynamicJ === '1';
 
     // 尝试从 Redis 读取扫描结果
     let data = null;
