@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Tabs } from 'antd';
-import { FilterOutlined, LineChartOutlined, ExperimentOutlined, SearchOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { useState, useEffect } from 'react';
+import { Tabs, Tooltip } from 'antd';
+import { FilterOutlined, LineChartOutlined, ExperimentOutlined, SearchOutlined, ThunderboltOutlined, LockOutlined } from '@ant-design/icons';
 import Layout from './components/Layout';
 import ParamPanel from './components/ParamPanel';
 import ResultList from './components/ResultList';
@@ -13,16 +13,42 @@ import useTracking from './hooks/useTracking';
 import useBacktest from './hooks/useBacktest';
 import useHotData from './hooks/useHotData';
 import useSwingTrade from './hooks/useSwingTrade';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { startAntiDebug, stopAntiDebug } from './lib/antiDebug';
 
-export default function App() {
+function LockedTab({ label }) {
+  return (
+    <Tooltip title="需要高级权限">
+      <span className="text-slate-400">
+        <LockOutlined className="mr-1" />{label}
+      </span>
+    </Tooltip>
+  );
+}
+
+function AppInner() {
   const screener = useScreener();
   const tracking = useTracking();
   const backtest = useBacktest();
   const swingTrade = useSwingTrade();
   const { hotData } = useHotData();
   const [activeTab, setActiveTab] = useState('screener');
+  const { hasRole } = useAuth();
+
+  const isPremium = hasRole('premium');
+
+  // 非 premium 用户启用反调试
+  useEffect(() => {
+    if (!isPremium) {
+      startAntiDebug();
+      return () => stopAntiDebug();
+    } else {
+      stopAntiDebug();
+    }
+  }, [isPremium]);
 
   const handleTabChange = (key) => {
+    if (!isPremium && ['tracking', 'backtest', 'swing'].includes(key)) return;
     setActiveTab(key);
     if (key === 'tracking') tracking.activate();
   };
@@ -54,8 +80,11 @@ export default function App() {
     },
     {
       key: 'tracking',
-      label: <span><LineChartOutlined /> 追踪</span>,
-      children: (
+      label: isPremium
+        ? <span><LineChartOutlined /> 追踪</span>
+        : <LockedTab label="追踪" />,
+      disabled: !isPremium,
+      children: isPremium ? (
         <TrackingView
           params={tracking.params}
           setParams={tracking.setParams}
@@ -69,12 +98,15 @@ export default function App() {
           sharedConcepts={sharedConcepts}
           hotData={hotData}
         />
-      ),
+      ) : null,
     },
     {
       key: 'backtest',
-      label: <span><ExperimentOutlined /> 回测</span>,
-      children: (
+      label: isPremium
+        ? <span><ExperimentOutlined /> 回测</span>
+        : <LockedTab label="回测" />,
+      disabled: !isPremium,
+      children: isPremium ? (
         <BacktestView
           params={backtest.params}
           setParams={backtest.setParams}
@@ -93,12 +125,15 @@ export default function App() {
           sharedConcepts={sharedConcepts}
           hotData={hotData}
         />
-      ),
+      ) : null,
     },
     {
       key: 'swing',
-      label: <span><ThunderboltOutlined /> 超短线</span>,
-      children: (
+      label: isPremium
+        ? <span><ThunderboltOutlined /> 超短线</span>
+        : <LockedTab label="超短线" />,
+      disabled: !isPremium,
+      children: isPremium ? (
         <SwingTradeView
           subTab={swingTrade.subTab}
           setSubTab={swingTrade.setSubTab}
@@ -142,7 +177,7 @@ export default function App() {
           loading={swingTrade.loading}
           hotData={hotData}
         />
-      ),
+      ) : null,
     },
     {
       key: 'search',
@@ -161,5 +196,13 @@ export default function App() {
         className="stock-tabs"
       />
     </Layout>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppInner />
+    </AuthProvider>
   );
 }

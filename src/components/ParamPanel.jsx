@@ -4,6 +4,7 @@ import { SearchOutlined, ReloadOutlined, TagsOutlined } from '@ant-design/icons'
 import { buildConcepts } from '../lib/api';
 import { buildHotOptions } from '../hooks/useHotData';
 import { getLastTradingDate } from '../lib/date';
+import { useAuth } from '../contexts/AuthContext';
 import dayjs from 'dayjs';
 
 const KLT_OPTIONS = [
@@ -20,6 +21,9 @@ const BOARD_OPTIONS = [
 export default function ParamPanel({ params, setParams, date, setDate, industries, concepts, onSearch, loading, hotData }) {
   const update = (key, val) => setParams(prev => ({ ...prev, [key]: val }));
   const [buildingConcepts, setBuildingConcepts] = useState(false);
+  const { hasRole } = useAuth();
+  const isPremium = hasRole('premium');
+  const isAdmin = hasRole('admin');
 
   const handleBuildConcepts = async () => {
     setBuildingConcepts(true);
@@ -117,22 +121,24 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-slate-400">J 值模式</span>
-            <Radio.Group
-              value={params.jMode || 'fixed'}
-              onChange={e => update('jMode', e.target.value)}
-              optionType="button"
-              buttonStyle="solid"
-              size="middle"
-              options={[
-                { label: '固定', value: 'fixed' },
-                { label: '动态', value: 'dynamic' },
-              ]}
-            />
-          </div>
+          {isPremium && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">J 值模式</span>
+              <Radio.Group
+                value={params.jMode || 'fixed'}
+                onChange={e => update('jMode', e.target.value)}
+                optionType="button"
+                buttonStyle="solid"
+                size="middle"
+                options={[
+                  { label: '固定', value: 'fixed' },
+                  { label: '动态', value: 'dynamic' },
+                ]}
+              />
+            </div>
+          )}
 
-          {(params.jMode || 'fixed') === 'fixed' && (
+          {isPremium && (params.jMode || 'fixed') === 'fixed' && (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-slate-400">J 值阈值</span>
               <InputNumber
@@ -144,19 +150,21 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </div>
           )}
 
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-slate-400">容差 %</span>
-            <InputNumber
-              value={params.tolerance}
-              onChange={v => update('tolerance', v ?? 2)}
-              min={0.5}
-              max={10}
-              step={0.5}
-              style={{ width: 100 }}
-            />
-          </div>
+          {isPremium && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">容差 %</span>
+              <InputNumber
+                value={params.tolerance}
+                onChange={v => update('tolerance', v ?? 2)}
+                min={0.5}
+                max={10}
+                step={0.5}
+                style={{ width: 100 }}
+              />
+            </div>
+          )}
 
-          {params.klt === 'daily' && (
+          {isPremium && params.klt === 'daily' && (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-slate-400">周线多头</span>
               <Switch
@@ -166,7 +174,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </div>
           )}
 
-          {params.klt === 'daily' && (
+          {isPremium && params.klt === 'daily' && (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-slate-400">周线低位</span>
               <Switch
@@ -176,7 +184,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </div>
           )}
 
-          {params.klt === 'weekly' && (
+          {isPremium && params.klt === 'weekly' && (
             <div className="flex flex-col gap-1">
               <span className="text-xs text-slate-400">日线低位</span>
               <Switch
@@ -186,45 +194,55 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             </div>
           )}
 
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-slate-400">收盘&gt;短趋</span>
-            <Switch
-              checked={params.closeAboveShort}
-              onChange={v => update('closeAboveShort', v)}
-            />
-          </div>
+          {isPremium && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">收盘&gt;短趋</span>
+              <Switch
+                checked={params.closeAboveShort}
+                onChange={v => update('closeAboveShort', v)}
+              />
+            </div>
+          )}
 
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-slate-400">倍量</span>
-            <Switch
-              checked={params.hasVolumeDouble}
-              onChange={v => update('hasVolumeDouble', v)}
-            />
-          </div>
+          {isPremium && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">倍量</span>
+              <Switch
+                checked={params.hasVolumeDouble}
+                onChange={v => update('hasVolumeDouble', v)}
+              />
+            </div>
+          )}
 
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-slate-400">缩量回踩</span>
-            <Switch
-              checked={params.hasShrinkingPullback}
-              onChange={v => update('hasShrinkingPullback', v)}
-            />
-          </div>
+          {isPremium && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">缩量回踩</span>
+              <Switch
+                checked={params.hasShrinkingPullback}
+                onChange={v => update('hasShrinkingPullback', v)}
+              />
+            </div>
+          )}
 
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-slate-400">连续缩量</span>
-            <Switch
-              checked={params.hasConsecutiveShrink}
-              onChange={v => update('hasConsecutiveShrink', v)}
-            />
-          </div>
+          {isPremium && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">连续缩量</span>
+              <Switch
+                checked={params.hasConsecutiveShrink}
+                onChange={v => update('hasConsecutiveShrink', v)}
+              />
+            </div>
+          )}
 
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-slate-400">白线下20</span>
-            <Switch
-              checked={params.whiteBelowTwenty}
-              onChange={v => update('whiteBelowTwenty', v)}
-            />
-          </div>
+          {isPremium && (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-400">白线下20</span>
+              <Switch
+                checked={params.whiteBelowTwenty}
+                onChange={v => update('whiteBelowTwenty', v)}
+              />
+            </div>
+          )}
 
           <div className="flex flex-col gap-1">
             <span className="text-xs text-slate-400">只看热门</span>
@@ -249,7 +267,7 @@ export default function ParamPanel({ params, setParams, date, setDate, industrie
             >
               重置
             </Button>
-            {!conceptOptions.length && (
+            {isAdmin && !conceptOptions.length && (
               <Button
                 icon={<TagsOutlined />}
                 onClick={handleBuildConcepts}

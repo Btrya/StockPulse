@@ -1,7 +1,12 @@
+import { getAuthToken } from './auth';
+
 const BASE = '/api';
 
 async function request(path, opts = {}) {
-  const res = await fetch(`${BASE}${path}`, opts);
+  const token = getAuthToken();
+  const headers = { ...(opts.headers || {}) };
+  if (token) headers['X-Auth-Token'] = token;
+  const res = await fetch(`${BASE}${path}`, { ...opts, headers });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;
@@ -95,7 +100,7 @@ export function fetchBacktestResults(params) {
   if (params.hasShrinkingPullback) qs.set('hasShrinkingPullback', '1');
   if (params.hasConsecutiveShrink) qs.set('hasConsecutiveShrink', '1');
   if (params.whiteBelowTwenty) qs.set('whiteBelowTwenty', '1');
-  return request(`/backtest-results?${qs}`);
+  return request(`/backtest?${qs}`);
 }
 
 export function searchStocks(q) {
@@ -120,5 +125,5 @@ export function fetchPostAnalysisData(params) {
   if (params.klt) qs.set('klt', params.klt);
   if (params.window != null) qs.set('window', String(params.window));
   if (params.codesHash) qs.set('codesHash', params.codesHash);
-  return request(`/post-analysis-data?${qs}`);
+  return request(`/post-analysis?${qs}`);
 }

@@ -42,6 +42,27 @@ export async function keys(pattern) {
   return cmd('KEYS', pattern);
 }
 
+export async function hget(key, field) {
+  return cmd('HGET', key, field);
+}
+
+export async function hset(key, field, value) {
+  return cmd('HSET', key, field, value);
+}
+
+export async function hdel(key, field) {
+  return cmd('HDEL', key, field);
+}
+
+export async function hgetall(key) {
+  const raw = await cmd('HGETALL', key);
+  // Upstash 返回 [k1, v1, k2, v2, ...] 或 null
+  if (!Array.isArray(raw)) return {};
+  const obj = {};
+  for (let i = 0; i < raw.length; i += 2) obj[raw[i]] = raw[i + 1];
+  return obj;
+}
+
 export function isConfigured() {
   return !!(url && token);
 }
