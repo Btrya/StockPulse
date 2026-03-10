@@ -190,7 +190,7 @@ export function screenStock(stock, opts = {}) {
   }
 
   const code = symbol || ts_code.split('.')[0];
-  const board = getMarketBoard(code);
+  const board = ts_code?.endsWith('.BJ') ? 'bse' : getMarketBoard(code);
 
   // 涨停判定：根据板块确定涨停幅度
   const limitPct = (board === 'gem' || board === 'star') ? 20
