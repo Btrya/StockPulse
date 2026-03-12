@@ -203,7 +203,7 @@ export default function TrackingPanel({ params, setParams, date, setDate, indust
             </Button>
             <Button
               icon={<ReloadOutlined />}
-              onClick={() => { setParams({ klt: 'daily', minDays: 2, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, dynamicJ: false, whiteBelowTwenty: false, onlyHot: false }); setDate(getLastTradingDate()); }}
+              onClick={() => { setParams({ klt: 'daily', minDays: 2, j: 13, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, dynamicJ: false, whiteBelowTwenty: false, onlyHot: false }); setDate(getLastTradingDate()); }}
             >
               重置
             </Button>

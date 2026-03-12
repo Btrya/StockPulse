@@ -4,7 +4,7 @@ import { getLastTradingDate } from '../lib/date';
 import { useAuth } from '../contexts/AuthContext';
 import { can } from '../lib/permissions';
 
-const DEFAULTS = { klt: 'daily', minDays: 2, j: 0, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, dynamicJ: false, whiteBelowTwenty: false, onlyHot: false };
+const DEFAULTS = { klt: 'daily', minDays: 2, j: 13, tolerance: 2, industries: [], excludeBoards: [], concepts: [], weeklyBull: false, weeklyLowJ: false, dailyLowJ: false, dynamicJ: false, whiteBelowTwenty: false, onlyHot: false };
 
 export default function useTracking() {
   const { role } = useAuth();

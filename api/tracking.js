@@ -3,7 +3,7 @@ import { KEY, DEFAULT_J, DEFAULT_TOLERANCE, DEFAULT_KLT, MARKET_BOARDS, TRACKING
 import { filterResults } from './_lib/screener.js';
 import { requireRole } from './_lib/auth.js';
 import { recordEvent } from './_lib/stats.js';
-import { PERMISSIONS } from './_lib/permissions.js';
+import { PERMISSIONS, can } from './_lib/permissions.js';
 
 export default async function handler(req, res) {
   try {
@@ -14,7 +14,8 @@ export default async function handler(req, res) {
 
     const klt = req.query.klt || DEFAULT_KLT;
     const minDays = Number(req.query.minDays ?? 2);
-    const j = Number(req.query.j ?? DEFAULT_J);
+    const canJ = can(session.role, 'param_jThreshold');
+    const j = canJ ? Number(req.query.j ?? 13) : 13;
     const tolerance = Number(req.query.tolerance ?? DEFAULT_TOLERANCE);
     const industries = req.query.industries ? req.query.industries.split(',').filter(Boolean) : [];
     const excludeBoards = req.query.excludeBoards ? req.query.excludeBoards.split(',').filter(Boolean) : [];
@@ -22,7 +23,7 @@ export default async function handler(req, res) {
     const weeklyBull = req.query.weeklyBull === '1';
     const weeklyLowJ = req.query.weeklyLowJ === '1';
     const dailyLowJ = req.query.dailyLowJ === '1';
-    const dynamicJ = req.query.dynamicJ === '1';
+    const dynamicJ = canJ && req.query.dynamicJ === '1';
     const whiteBelowTwenty = req.query.whiteBelowTwenty === '1';
     const reqDate = req.query.date || null; // 用户指定日期（锚定追踪窗口）
 
@@ -70,7 +71,7 @@ export default async function handler(req, res) {
       const raw = await redis.get(KEY.screenResult(d, klt));
       if (raw && raw.length) {
         dateResults[d] = filterResults(raw, {
-          jThreshold: DEFAULT_J,
+          jThreshold: 13,
           tolerance: DEFAULT_TOLERANCE,
           industries: [],
           excludeBoards: [],
